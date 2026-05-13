@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS public.division_gastos CASCADE;
+DROP TABLE IF EXISTS public.gastos CASCADE;
+DROP TABLE IF EXISTS public.usuarios CASCADE;
+DROP TABLE IF EXISTS public.usuarios_viajes CASCADE;
+DROP TABLE IF EXISTS public.viajes CASCADE;

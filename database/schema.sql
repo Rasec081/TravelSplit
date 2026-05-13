@@ -14,15 +14,32 @@ CREATE TABLE usuarios (
 );
 
 -- =========================================
+-- TABLA: categorias
+-- =========================================
+CREATE TABLE categorias (
+    id_categoria SERIAL PRIMARY KEY,
+    nombre_categoria VARCHAR(256) NOT NULL,
+    tipo VARCHAR(16) NOT NULL,
+
+    CONSTRAINT chk_tipo_categoria
+        CHECK (tipo IN ('viaje', 'gasto'))
+);
+
+-- =========================================
 -- TABLA: viajes
 -- =========================================
 
 CREATE TABLE viajes (
     id_viaje SERIAL PRIMARY KEY,
     nombre VARCHAR(128) NOT NULL,
+    id_categoria INT,
     fecha_creacion TIMESTAMP NOT NULL
-        DEFAULT CURRENT_TIMESTAMP
+        DEFAULT CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_viajes_categoria
+        FOREIGN KEY (id_categoria)
+        REFERENCES categorias(id_categoria)
+        ON DELETE SET NULL
 );
 
 -- =========================================
@@ -35,8 +52,6 @@ CREATE TABLE usuarios_viajes (
     id_usuario INT NOT NULL,
     balance NUMERIC(10,2) DEFAULT 0,
     rol VARCHAR(16) NOT NULL,
-
-
 
     CONSTRAINT fk_usuarios_viajes_viaje
         FOREIGN KEY (id_viaje)
@@ -53,8 +68,9 @@ CREATE TABLE usuarios_viajes (
 
     CONSTRAINT chk_rol
         CHECK (rol IN ('admin', 'participante'))
-
 );
+
+
 
 -- =========================================
 -- TABLA: gastos
@@ -64,6 +80,7 @@ CREATE TABLE gastos (
     id_gasto SERIAL PRIMARY KEY,
     id_viaje INT NOT NULL,
     id_usuario INT NOT NULL,
+    id_categoria INT,
     monto NUMERIC(10,2) NOT NULL,
     descripcion VARCHAR(256) NOT NULL,
     fecha_creacion TIMESTAMP NOT NULL
@@ -79,9 +96,13 @@ CREATE TABLE gastos (
         REFERENCES usuarios(id_usuario)
         ON DELETE CASCADE,
 
+    CONSTRAINT fk_gastos_categoria
+        FOREIGN KEY (id_categoria)
+        REFERENCES categorias(id_categoria)
+        ON DELETE SET NULL,
+
     CONSTRAINT chk_monto_gasto
         CHECK (monto > 0)
-
 );
 
 -- =========================================
@@ -109,7 +130,6 @@ CREATE TABLE division_gastos (
 
     CONSTRAINT chk_monto_division
         CHECK (monto >= 0)
-
 );
 
 -- =========================================
@@ -133,3 +153,9 @@ ON usuarios_viajes(id_viaje);
 
 CREATE INDEX idx_usuarios_viajes_usuario
 ON usuarios_viajes(id_usuario);
+
+CREATE INDEX idx_viajes_categoria
+ON viajes(id_categoria);
+
+CREATE INDEX idx_gastos_categoria
+ON gastos(id_categoria);
