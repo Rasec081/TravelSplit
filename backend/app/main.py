@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.routes.gasto_routes import router as gasto_router
 from app.routes.user_routes import router as user_router
 
 app = FastAPI(
@@ -26,6 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(user_router)
+app.include_router(gasto_router)
 
 
 @app.exception_handler(HTTPException)
