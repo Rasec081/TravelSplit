@@ -5,3 +5,7 @@ class UserConflictError(Exception):
 class CategoriaConflictError(Exception):
     pass
 
+
+class TravelConflictError(Exception):
+    pass
+
