@@ -32,11 +32,21 @@ class GastoBase(BaseModel):
         return value.strip()
 
 
+# ============================================================================
+# ESQUEMAS PARA GASTOS
+# ============================================================================
+
+
 class GastoCreate(GastoBase):
+    """Request para crear un gasto.
+    
+    Nota: Las divisiones se crean de forma independiente via POST /divisiones-gastos
+    """
     pass
 
 
 class GastoUpdate(BaseModel):
+    """Request para actualizar un gasto."""
     id_viaje: int | None = Field(default=None, gt=0)
     id_usuario: int | None = Field(default=None, gt=0)
     id_categoria: int | None = Field(default=None, gt=0)
@@ -58,6 +68,7 @@ class GastoUpdate(BaseModel):
 
 
 class GastoResponse(GastoBase):
+    """Respuesta con detalles de un gasto."""
     id_gasto: int
     fecha_creacion: datetime
 
@@ -65,4 +76,7 @@ class GastoResponse(GastoBase):
 
 
 class GastoMessageResponse(BaseModel):
+    """Respuesta con mensaje para operaciones sobre gastos."""
     message: str
+    data: GastoResponse
+

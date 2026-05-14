@@ -120,24 +120,45 @@ CREATE TABLE gastos (
 CREATE TABLE division_gastos (
     id_division SERIAL PRIMARY KEY,
     id_gasto INT NOT NULL,
-    id_usuario INT NOT NULL,
-    monto NUMERIC(10,2) NOT NULL,
+    nombre VARCHAR(128) NOT NULL,
+    monto_total NUMERIC(10,2) NOT NULL,
+    fecha_creacion TIMESTAMP NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_division_gasto
         FOREIGN KEY (id_gasto)
         REFERENCES gastos(id_gasto)
         ON DELETE CASCADE,
 
-    CONSTRAINT fk_division_usuario
+    CONSTRAINT chk_monto_total_division
+        CHECK (monto_total > 0)
+);
+
+-- =========================================
+-- TABLA: division_gastos_participantes
+-- =========================================
+
+CREATE TABLE division_gastos_participantes (
+    id_participante SERIAL PRIMARY KEY,
+    id_division INT NOT NULL,
+    id_usuario INT NOT NULL,
+    monto NUMERIC(10,2) NOT NULL,
+
+    CONSTRAINT fk_div_part_division
+        FOREIGN KEY (id_division)
+        REFERENCES division_gastos(id_division)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_div_part_usuario
         FOREIGN KEY (id_usuario)
         REFERENCES usuarios(id_usuario)
         ON DELETE CASCADE,
 
-    CONSTRAINT uq_gasto_usuario
-        UNIQUE (id_gasto, id_usuario),
+    CONSTRAINT uq_division_usuario_part
+        UNIQUE (id_division, id_usuario),
 
-    CONSTRAINT chk_monto_division
-        CHECK (monto >= 0)
+    CONSTRAINT chk_monto_participante
+        CHECK (monto > 0)
 );
 
 -- =========================================
@@ -153,8 +174,11 @@ ON gastos(id_usuario);
 CREATE INDEX idx_division_gasto
 ON division_gastos(id_gasto);
 
-CREATE INDEX idx_division_usuario
-ON division_gastos(id_usuario);
+CREATE INDEX idx_div_part_division
+ON division_gastos_participantes(id_division);
+
+CREATE INDEX idx_div_part_usuario
+ON division_gastos_participantes(id_usuario);
 
 CREATE INDEX idx_usuarios_viajes_viaje
 ON usuarios_viajes(id_viaje);
