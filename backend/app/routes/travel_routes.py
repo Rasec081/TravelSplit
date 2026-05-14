@@ -100,16 +100,12 @@ def validar_travel_update(travel_data: TravelUpdate) -> tuple[bool, str]:
 
 def validar_es_admin(db: Session, travel_id: int, user_id: int) -> tuple[bool, str]:
     """
-    Valida si un usuario es admin de un viaje.
+    Valida si un usuario es admin (creador) de un viaje.
     Retorna: (es_admin, mensaje_error)
     """
-    admin = travel.get_admin_by_travel(db, travel_id)
+    es_admin = travel.is_travel_admin(db, travel_id, user_id)
     
-    if not admin:
-        print(f"[ERROR] No existe admin para viaje {travel_id}")
-        return False, "Viaje no tiene admin asignado"
-    
-    if admin.id_usuario != user_id:
+    if not es_admin:
         print(f"[ERROR] Usuario {user_id} no es admin del viaje {travel_id}")
         return False, "Solo el admin del viaje puede realizar esta acción"
     
@@ -146,16 +142,14 @@ def create_travel(
         travel_obj = travel.create_travel(db, travel_data)
         print(f"[SUCCESS] Viaje creado exitosamente con ID: {travel_obj.id_travel}")
         
-        # Obtener información del admin
-        admin_info = travel.get_admin_by_travel(db, travel_obj.id_travel)
-        
-        # Construir respuesta
+        # Construir respuesta (Travel tiene id_usuario_creador directamente)
         travel_response = TravelResponse(
             id_travel=travel_obj.id_travel,
             nombre=travel_obj.nombre,
             id_categoria=travel_obj.id_categoria,
+            id_usuario_creador=travel_obj.id_usuario_creador,
             fecha_creacion=travel_obj.fecha_creacion,
-            admin_info=admin_info
+            fecha_cierre=travel_obj.fecha_cierre
         )
         
         return TravelMessageResponse(
@@ -188,16 +182,16 @@ def list_travels(
         travels = travel.get_travels(db)
         print(f"[SUCCESS] Se obtuvieron {len(travels)} viaje(s)")
         
-        # Enriquecer cada viaje con info del admin
+        # Convertir cada viaje a TravelResponse
         travels_response = []
         for t in travels:
-            admin_info = travel.get_admin_by_travel(db, t.id_travel)
             travel_response = TravelResponse(
                 id_travel=t.id_travel,
                 nombre=t.nombre,
                 id_categoria=t.id_categoria,
+                id_usuario_creador=t.id_usuario_creador,
                 fecha_creacion=t.fecha_creacion,
-                admin_info=admin_info
+                fecha_cierre=t.fecha_cierre
             )
             travels_response.append(travel_response)
         
@@ -246,15 +240,13 @@ def get_travel(
         
         print(f"[SUCCESS] Viaje encontrado: {travel_obj.nombre}")
         
-        # Obtener información del admin
-        admin_info = travel.get_admin_by_travel(db, travel_obj.id_travel)
-        
         travel_response = TravelResponse(
             id_travel=travel_obj.id_travel,
             nombre=travel_obj.nombre,
             id_categoria=travel_obj.id_categoria,
+            id_usuario_creador=travel_obj.id_usuario_creador,
             fecha_creacion=travel_obj.fecha_creacion,
-            admin_info=admin_info
+            fecha_cierre=travel_obj.fecha_cierre
         )
         
         return travel_response
@@ -317,15 +309,13 @@ def update_travel(
         updated_travel = travel.update_travel(db, travel_obj, travel_data)
         print(f"[SUCCESS] Viaje actualizado exitosamente: {updated_travel.nombre}")
         
-        # Obtener información del admin
-        admin_info = travel.get_admin_by_travel(db, updated_travel.id_travel)
-        
         travel_response = TravelResponse(
             id_travel=updated_travel.id_travel,
             nombre=updated_travel.nombre,
             id_categoria=updated_travel.id_categoria,
+            id_usuario_creador=updated_travel.id_usuario_creador,
             fecha_creacion=updated_travel.fecha_creacion,
-            admin_info=admin_info
+            fecha_cierre=updated_travel.fecha_cierre
         )
         
         return TravelMessageResponse(

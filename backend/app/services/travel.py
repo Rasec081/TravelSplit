@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -24,39 +26,38 @@ def get_user_travel_by_ids(db: Session, travel_id: int, user_id: int) -> UserTra
     ).first()
 
 
-def get_admin_by_travel(db: Session, travel_id: int) -> UserTravel | None:
-    """Obtiene el admin de un viaje."""
-    return db.query(UserTravel).filter(
-        UserTravel.id_travel == travel_id,
-        UserTravel.rol == "admin"
-    ).first()
+def is_travel_admin(db: Session, travel_id: int, user_id: int) -> bool:
+    """Verifica si un usuario es admin (creador) del viaje."""
+    travel = get_travel_by_id(db, travel_id)
+    if not travel:
+        return False
+    return travel.id_usuario_creador == user_id
 
 
 def create_travel(db: Session, travel_data: TravelCreate) -> Travel:
-    """Crea un nuevo viaje y asigna al usuario como admin."""
+    """Crea un nuevo viaje con el usuario especificado como creador (admin).
+    
+    Las fechas se generan automáticamente:
+    - fecha_creacion: ahora
+    - fecha_cierre: NULL (se establece cuando se cierra)
+    """
     travel = Travel(
         nombre=travel_data.nombre.strip(),
         id_categoria=travel_data.id_categoria,
+        id_usuario_creador=travel_data.id_usuario,
+        fecha_creacion=datetime.utcnow(),
+        fecha_cierre=None  # Aún no se cierra
     )
 
     try:
         print(f"[INFO] Intentando crear viaje: {travel.nombre}")
+        print(f"[INFO] Creador (Admin): Usuario {travel_data.id_usuario}")
+        
         db.add(travel)
-        db.flush()  # Obtener el ID del viaje sin hacer commit
-        print(f"[INFO] Viaje creado con ID: {travel.id_travel}")
-
-        # Crear relación usuario-viaje con rol de admin
-        user_travel = UserTravel(
-            id_travel=travel.id_travel,
-            id_usuario=travel_data.id_usuario,
-            rol="admin",
-            balance=0.0
-        )
-        print(f"[INFO] Asignando usuario {travel_data.id_usuario} como admin del viaje")
-        db.add(user_travel)
         db.commit()
         db.refresh(travel)
-        print(f"[SUCCESS] Viaje creado exitosamente con admin asignado")
+        
+        print(f"[SUCCESS] Viaje creado exitosamente con ID: {travel.id_travel}")
         return travel
     except IntegrityError as exc:
         print(f"[ERROR] Error de integridad al crear viaje: {exc}")
@@ -93,6 +94,23 @@ def update_travel(db: Session, travel: Travel, travel_data: TravelUpdate) -> Tra
         db.rollback()
         raise TravelConflictError(
             "No se pudo actualizar el viaje con los datos proporcionados."
+        ) from exc
+
+
+def close_travel(db: Session, travel: Travel) -> Travel:
+    """Cierra un viaje estableciendo fecha_cierre a la fecha/hora actual."""
+    try:
+        print(f"[INFO] Cerrando viaje con ID: {travel.id_travel}")
+        travel.fecha_cierre = datetime.utcnow()
+        db.commit()
+        db.refresh(travel)
+        print(f"[SUCCESS] Viaje cerrado exitosamente")
+        return travel
+    except IntegrityError as exc:
+        print(f"[ERROR] Error de integridad al cerrar viaje: {exc}")
+        db.rollback()
+        raise TravelConflictError(
+            "No se pudo cerrar el viaje."
         ) from exc
 
 

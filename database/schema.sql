@@ -33,13 +33,21 @@ CREATE TABLE viajes (
     id_viaje SERIAL PRIMARY KEY,
     nombre VARCHAR(128) NOT NULL,
     id_categoria INT,
+    id_usuario_creador INT NOT NULL,
     fecha_creacion TIMESTAMP NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+    fecha_cierre TIMESTAMP
         DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_viajes_categoria
         FOREIGN KEY (id_categoria)
         REFERENCES categorias(id_categoria)
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
+        
+    CONSTRAINT fk_viajes_usuario_creador
+        FOREIGN KEY (id_usuario_creador)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE
 );
 
 -- =========================================

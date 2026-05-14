@@ -36,21 +36,18 @@ class TravelUpdate(BaseModel):
     )
 
 
-class UserTravelResponse(BaseModel):
-    id_user_travel: int
-    id_travel: int
-    id_usuario: int
-    balance: float
-    rol: Literal["admin", "participante"]
-
-    class Config:
-        from_attributes = True
-
-
 class TravelResponse(TravelBase):
     id_travel: int
-    fecha_creacion: datetime
-    admin_info: UserTravelResponse | None = None
+    id_usuario_creador: int = Field(
+        description="ID del usuario que creó el viaje (admin del viaje)."
+    )
+    fecha_creacion: datetime = Field(
+        description="Fecha y hora cuando se creó el viaje (automática)."
+    )
+    fecha_cierre: datetime | None = Field(
+        default=None,
+        description="Fecha y hora cuando se cerró el viaje (automática cuando se cierra)."
+    )
 
     class Config:
         from_attributes = True
