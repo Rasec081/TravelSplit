@@ -13,6 +13,12 @@ from app.services.exceptions import CategoriaConflictError
 
 router = APIRouter(prefix="/categorias", tags=["Categorías"])
 
+
+'''
+aqui van las validaciones de datos que se reciben del frontend, y aqui se llaman a 
+las funciones del servicio de categorias para insertar los datos en la db
+'''
+
 # ============================================================================
 # FUNCIONES DE VALIDACIÓN
 # ============================================================================
@@ -309,7 +315,7 @@ def delete_categoria(
     
     try:
         print(f"[INFO] Buscando categoría existente con ID: {categoria_id}")
-        categoria = travels_cat.get_categoria_by_id(db, categoria_id)
+        categoria = categories.get_categoria_by_id(db, categoria_id)
         
         if not categoria:
             print(f"[ERROR] Categoría con ID {categoria_id} no encontrada")

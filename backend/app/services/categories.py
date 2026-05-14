@@ -6,7 +6,7 @@ from app.schemas.categorias_schema import CategoriaCreate, CategoriaUpdate
 from app.services.exceptions import CategoriaConflictError
 
 '''
-aqui van los cruds
+aqui van los cruds y aqui es donde insertamos los datos en la db
 '''
 def get_categorias(db: Session, tipo: str | None = None) -> list[Categoria]: 
     #da la opcion de filtrar por tipo, por default van todas
@@ -30,10 +30,14 @@ def create_categoria(db: Session, categoria_data: CategoriaCreate) -> Categoria:
 
     try:
         db.add(categoria)
+        print("Intentando crear categoría:", categoria.nombre_categoria, "Tipo:", categoria.tipo)
         db.commit()
+        print("Categoría creada con ID(se hizo el commit):", categoria.id_categoria)
         db.refresh(categoria)
+        print("Categoría después del refresh:", categoria.id_categoria, categoria.nombre_categoria, categoria.tipo)
         return categoria
     except IntegrityError as exc:
+        print("no se creo la categoría, hubo un error de integridad:", exc)
         db.rollback()
         raise CategoriaConflictError(
             "No se pudo crear la categoría con los datos proporcionados."
@@ -67,7 +71,3 @@ def delete_categoria(db: Session, categoria: Categoria) -> None:
     db.commit()
 
 
-'''
-rn los endpoints hay que verificar que existe, que los datos esten bien y todas esas cosas
-y dar errores más especificos en las validaciones
-'''

@@ -11,3 +11,7 @@ class GastoNotFoundError(Exception):
 class CategoriaConflictError(Exception):
     pass
 
+
+class TravelConflictError(Exception):
+    pass
+

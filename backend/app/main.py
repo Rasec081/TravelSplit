@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.routes.gasto_routes import router as gasto_router
 from app.routes.categorias_routes import router as categorias_router
+from app.routes.travel_routes import router as travel_router
 from app.routes.user_routes import router as user_router
 
 app = FastAPI(
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(user_router)
 app.include_router(gasto_router)
 app.include_router(categorias_router)
+app.include_router(travel_router)
 
 
 @app.exception_handler(HTTPException)
