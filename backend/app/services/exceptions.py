@@ -8,3 +8,6 @@ class GastoValidationError(Exception):
 
 class GastoNotFoundError(Exception):
     pass
+class CategoriaConflictError(Exception):
+    pass
+
