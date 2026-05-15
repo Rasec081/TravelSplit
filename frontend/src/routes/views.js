@@ -4,4 +4,5 @@ export const views = {
   reset: "reset",
   resetConfirm: "resetConfirm",
   home: "home",
+  profile: "profile",
 };

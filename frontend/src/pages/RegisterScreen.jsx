@@ -1,19 +1,13 @@
 import { useState } from "react";
 
-import { PhoneInput } from "../components/forms/PhoneInput";
 import { TextInput } from "../components/forms/TextInput";
 import { views } from "../routes/views";
 import { registerUser } from "../services/authService";
-import { formatBirthdate } from "../utils/formatters";
 
 const initialFormData = {
   name: "",
   lastname: "",
   email: "",
-  phone: "",
-  phoneCountry: "CR",
-  phoneNumber: "",
-  birthdate: "",
   password: "",
   confirmPassword: "",
 };
@@ -123,30 +117,6 @@ export function RegisterScreen({ goTo, onLogin }) {
               placeholder="Juan@figma.com"
               type="email"
               value={formData.email}
-            />
-            <PhoneInput
-              id="register-phone"
-              label="Numero de telefono"
-              countryCode={formData.phoneCountry}
-              number={formData.phoneNumber}
-              onChange={({ countryCode, number, value }) =>
-                setFormData((currentData) => ({
-                  ...currentData,
-                  phone: value,
-                  phoneCountry: countryCode,
-                  phoneNumber: number,
-                }))
-              }
-            />
-            <TextInput
-              id="register-birthdate"
-              label="Fecha de nacimiento"
-              inputMode="numeric"
-              maxLength="10"
-              onChange={(event) => updateField("birthdate", formatBirthdate(event.target.value))}
-              placeholder="dd/mm/aaaa"
-              type="text"
-              value={formData.birthdate}
             />
           </div>
 

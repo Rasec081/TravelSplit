@@ -66,7 +66,12 @@ def authenticate_user(db: Session, login_data: UserLogin) -> User:
     normalized_email = str(login_data.correo).lower()
     user = get_user_by_email(db, normalized_email)
 
-    if not user or not verify_password(login_data.contrasena, user.contrasena):
+    if not user:
+        raise InvalidCredentialsError(
+            "Correo no existe, el usuario debe registrarse primero."
+        )
+
+    if not verify_password(login_data.contrasena, user.contrasena):
         raise InvalidCredentialsError("Correo o contrasena incorrectos.")
 
     return user
