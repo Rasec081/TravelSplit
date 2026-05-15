@@ -14,6 +14,25 @@ CREATE TABLE usuarios (
 );
 
 -- =========================================
+-- TABLA: password_reset_tokens
+-- =========================================
+
+CREATE TABLE password_reset_tokens (
+    id_token SERIAL PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    token_hash VARCHAR(64) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_password_reset_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE
+);
+
+-- =========================================
 -- TABLA: categorias
 -- =========================================
 CREATE TABLE categorias (
@@ -191,3 +210,9 @@ ON viajes(id_categoria);
 
 CREATE INDEX idx_gastos_categoria
 ON gastos(id_categoria);
+
+CREATE INDEX idx_password_reset_usuario
+ON password_reset_tokens(id_usuario);
+
+CREATE INDEX idx_password_reset_token_hash
+ON password_reset_tokens(token_hash);

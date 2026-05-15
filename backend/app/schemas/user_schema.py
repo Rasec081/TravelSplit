@@ -34,6 +34,42 @@ class UserCreate(UserBase):
     )
 
 
+class UserLogin(BaseModel):
+    correo: EmailStr = Field(
+        max_length=64,
+        examples=["ana@example.com"],
+        description="Correo electronico del usuario.",
+    )
+    contrasena: str = Field(
+        min_length=8,
+        max_length=128,
+        examples=["UnaClaveSegura123"],
+        description="Contrasena del usuario.",
+    )
+
+
+class PasswordResetRequest(BaseModel):
+    correo: EmailStr = Field(
+        max_length=64,
+        examples=["ana@example.com"],
+        description="Correo electronico que recibira el enlace de recuperacion.",
+    )
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(
+        min_length=20,
+        max_length=256,
+        description="Token temporal enviado al correo.",
+    )
+    nueva_contrasena: str = Field(
+        min_length=8,
+        max_length=128,
+        examples=["NuevaClaveSegura123"],
+        description="Nueva contrasena del usuario.",
+    )
+
+
 class UserUpdate(BaseModel):
     nombre: str | None = Field(default=None, min_length=2, max_length=64)
     correo: EmailStr | None = Field(default=None, max_length=64)
