@@ -37,6 +37,9 @@ def is_travel_admin(db: Session, travel_id: int, user_id: int) -> bool:
 def create_travel(db: Session, travel_data: TravelCreate) -> Travel:
     """Crea un nuevo viaje con el usuario especificado como creador (admin).
     
+    Además, automáticamente agrega al usuario creador a la tabla usuarios_viajes 
+    con rol de 'admin'.
+    
     Las fechas se generan automáticamente:
     - fecha_creacion: ahora
     - fecha_cierre: NULL (se establece cuando se cierra)
@@ -58,6 +61,21 @@ def create_travel(db: Session, travel_data: TravelCreate) -> Travel:
         db.refresh(travel)
         
         print(f"[SUCCESS] Viaje creado exitosamente con ID: {travel.id_travel}")
+        
+        # ✅ AUTOMÁTICAMENTE AGREGAR AL CREADOR A usuarios_viajes COMO ADMIN
+        user_travel = UserTravel(
+            id_travel=travel.id_travel,
+            id_usuario=travel_data.id_usuario,
+            balance=0,
+            rol="admin"
+        )
+        
+        print(f"[INFO] Agregando usuario {travel_data.id_usuario} como admin del viaje")
+        db.add(user_travel)
+        db.commit()
+        
+        print(f"[SUCCESS] Usuario agregado a usuarios_viajes como admin")
+        
         return travel
     except IntegrityError as exc:
         print(f"[ERROR] Error de integridad al crear viaje: {exc}")
@@ -126,4 +144,100 @@ def delete_travel(db: Session, travel: Travel) -> None:
         db.rollback()
         raise TravelConflictError(
             "No se pudo eliminar el viaje."
+        ) from exc
+
+
+def add_user_to_travel(db: Session, travel_id: int, user_id: int) -> UserTravel:
+    """Agrega un usuario a un viaje existente como participante.
+    
+    Args:
+        db: Sesión de base de datos
+        travel_id: ID del viaje
+        user_id: ID del usuario a agregar
+        
+    Returns:
+        UserTravel: Objeto creado
+        
+    Raises:
+        TravelConflictError: Si el usuario ya está en el viaje o si hay error
+    """
+    try:
+        # Verificar que el viaje existe
+        travel = get_travel_by_id(db, travel_id)
+        if not travel:
+            raise TravelConflictError(f"El viaje con ID {travel_id} no existe")
+        
+        # Verificar que el usuario no está ya en el viaje
+        existing = get_user_travel_by_ids(db, travel_id, user_id)
+        if existing:
+            raise TravelConflictError(f"El usuario {user_id} ya está en el viaje {travel_id}")
+        
+        print(f"[INFO] Agregando usuario {user_id} al viaje {travel_id}")
+        
+        user_travel = UserTravel(
+            id_travel=travel_id,
+            id_usuario=user_id,
+            balance=0,
+            rol="participante"
+        )
+        
+        db.add(user_travel)
+        db.commit()
+        db.refresh(user_travel)
+        
+        print(f"[SUCCESS] Usuario {user_id} agregado al viaje {travel_id}")
+        return user_travel
+        
+    except TravelConflictError:
+        raise
+    except IntegrityError as exc:
+        print(f"[ERROR] Error de integridad al agregar usuario: {exc}")
+        db.rollback()
+        raise TravelConflictError(
+            "No se pudo agregar el usuario al viaje"
+        ) from exc
+    except Exception as exc:
+        print(f"[ERROR] Error inesperado: {exc}")
+        db.rollback()
+        raise TravelConflictError(
+            "Error al agregar usuario al viaje"
+        ) from exc
+
+
+def remove_user_from_travel(db: Session, travel_id: int, user_id: int) -> None:
+    """Remueve un usuario de un viaje.
+    
+    Args:
+        db: Sesión de base de datos
+        travel_id: ID del viaje
+        user_id: ID del usuario a remover
+        
+    Raises:
+        TravelConflictError: Si no se encuentra la relación o hay error
+    """
+    try:
+        user_travel = get_user_travel_by_ids(db, travel_id, user_id)
+        if not user_travel:
+            raise TravelConflictError(f"El usuario {user_id} no está en el viaje {travel_id}")
+        
+        print(f"[INFO] Removiendo usuario {user_id} del viaje {travel_id}")
+        
+        db.delete(user_travel)
+        db.commit()
+        
+        print(f"[SUCCESS] Usuario removido del viaje")
+        
+    except TravelConflictError:
+        raise
+    except IntegrityError as exc:
+        print(f"[ERROR] Error de integridad al remover usuario: {exc}")
+        db.rollback()
+        raise TravelConflictError(
+            "No se pudo remover el usuario del viaje"
+        ) from exc
+    except Exception as exc:
+        print(f"[ERROR] Error inesperado: {exc}")
+        db.rollback()
+        raise TravelConflictError(
+            "Error al remover usuario del viaje"
         ) from exc
