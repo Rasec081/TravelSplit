@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { BrandHeader } from "../components/BrandHeader";
+import { PasswordInput } from "../components/forms/PasswordInput";
 import { TextInput } from "../components/forms/TextInput";
 import { views } from "../routes/views";
 import { loginUser } from "../services/authService";
@@ -71,14 +72,13 @@ export function LoginScreen({ goTo, onLogin }) {
             type="email"
             value={email}
           />
-          <TextInput
+          <PasswordInput
             autoComplete="current-password"
             error={errors.password}
             id="login-password"
             label="Contrasena"
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Ingresa tu contrasena"
-            type="password"
             value={password}
           />
 

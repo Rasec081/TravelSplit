@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { CreateTripModal } from "../components/CreateTripModal";
-import { HomeIcon } from "../components/icons/HomeIcon";
-import { UserIcon } from "../components/icons/UserIcon";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { views } from "../routes/views";
 import { getTravels } from "../services/tripService";
 
-export function HomeScreen({ currentUser, onLogout }) {
+export function HomeScreen({ currentUser, goTo, onLogout }) {
   const [trips, setTrips] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -25,35 +25,14 @@ export function HomeScreen({ currentUser, onLogout }) {
     fetchTravels();
   }, [fetchTravels]);
 
-
   return (
     <main className="home-page" aria-labelledby="home-title">
-      <header className="home-header">
-        <div className="home-header-inner">
-          <div className="app-brand">
-            <span aria-hidden="true">TS</span>
-            <strong>TravelSplit</strong>
-          </div>
-          <nav aria-label="Principal" className="home-nav">
-            <button className="home-nav-link active" type="button" aria-current="page">
-              <HomeIcon />
-              <span>Inicio</span>
-            </button>
-            <button className="home-nav-link" type="button">
-              <UserIcon />
-              <span>Perfil</span>
-            </button>
-          </nav>
-          <div className="home-actions">
-            <button className="my-trips-button" type="button">
-              {currentUser?.nombre ?? "Mi cuenta"}
-            </button>
-            <button className="logout-button" type="button" onClick={onLogout}>
-              Cerrar sesion
-            </button>
-          </div>
-        </div>
-      </header>
+      <DashboardHeader
+        activeView={views.home}
+        currentUser={currentUser}
+        goTo={goTo}
+        onLogout={onLogout}
+      />
 
       <section className="home-content">
         <div className="dashboard-hero">
