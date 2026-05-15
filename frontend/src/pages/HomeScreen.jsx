@@ -1,9 +1,30 @@
+import { useCallback, useEffect, useState } from "react";
+import { CreateTripModal } from "../components/CreateTripModal";
 import { HomeIcon } from "../components/icons/HomeIcon";
 import { UserIcon } from "../components/icons/UserIcon";
-import { trips } from "../constants/trips";
+import { getTravels } from "../services/tripService";
 
 export function HomeScreen({ currentUser, onLogout }) {
-  const totalParticipants = trips.reduce((total, trip) => total + trip.participants, 0);
+  const [trips, setTrips] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  const fetchTravels = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const travels = await getTravels();
+      setTrips(travels);
+    } catch {
+      setTrips([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTravels();
+  }, [fetchTravels]);
+
 
   return (
     <main className="home-page" aria-labelledby="home-title">
@@ -44,7 +65,12 @@ export function HomeScreen({ currentUser, onLogout }) {
               ordenada.
             </p>
           </div>
-          <button className="create-trip-button" type="button">
+          <button
+            className="create-trip-button"
+            type="button"
+            onClick={() => setShowModal(true)}
+            aria-haspopup="dialog"
+          >
             <span aria-hidden="true">+</span>
             Crear viaje
           </button>
@@ -54,14 +80,6 @@ export function HomeScreen({ currentUser, onLogout }) {
           <article className="metric-card">
             <span>Viajes registrados</span>
             <strong>{trips.length}</strong>
-          </article>
-          <article className="metric-card">
-            <span>Participantes</span>
-            <strong>{totalParticipants}</strong>
-          </article>
-          <article className="metric-card">
-            <span>Estados activos</span>
-            <strong>{trips.filter((trip) => trip.status !== "Cerrado").length}</strong>
           </article>
         </div>
 
@@ -73,29 +91,47 @@ export function HomeScreen({ currentUser, onLogout }) {
             </div>
           </div>
 
-          <div className="trip-table" aria-label="Lista de viajes">
-            <div className="trip-table-row trip-table-head">
-              <span>Viaje</span>
-              <span>Participantes</span>
-              <span>Estado</span>
-              <span>Accion</span>
+          {isLoading ? (
+            <div style={{ padding: "20px", textAlign: "center" }} role="status" aria-live="polite">
+              <p>Cargando viajes...</p>
             </div>
-            {trips.map((trip) => (
-              <article className="trip-table-row" key={trip.id}>
-                <div>
-                  <h3>{trip.name}</h3>
-                  <p>Gestion colaborativa de gastos</p>
-                </div>
-                <span>{trip.participants}</span>
-                <span className="status-badge">{trip.status}</span>
-                <button className="secondary-button" type="button">
-                  Ver detalles
-                </button>
-              </article>
-            ))}
-          </div>
+          ) : trips.length === 0 ? (
+            <div style={{ padding: "20px", textAlign: "center" }} role="status" aria-live="polite">
+              <p>No hay viajes registrados</p>
+            </div>
+          ) : (
+            <div className="trip-table" aria-label="Lista de viajes">
+              <div className="trip-table-row trip-table-head">
+                <span>Viaje</span>
+                <span>Participantes</span>
+                <span>Estado</span>
+                <span>Accion</span>
+              </div>
+              {trips.map((trip) => (
+                <article className="trip-table-row" key={trip.id_travel || trip.id}>
+                  <div>
+                    <h3>{trip.nombre}</h3>
+                    <p>Gestion colaborativa de gastos</p>
+                  </div>
+                  <span>{trip.participants || "-"}</span>
+                  <span className="status-badge">{trip.status || "Activo"}</span>
+                  <button className="secondary-button" type="button">
+                    Ver detalles
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
+
+      {showModal && (
+        <CreateTripModal
+          currentUser={currentUser}
+          onClose={() => setShowModal(false)}
+          onTripCreated={fetchTravels}
+        />
+      )}
     </main>
   );
 }
