@@ -35,6 +35,7 @@ CREATE TABLE password_reset_tokens (
 -- =========================================
 -- TABLA: categorias
 -- =========================================
+
 CREATE TABLE categorias (
     id_categoria SERIAL PRIMARY KEY,
     nombre_categoria VARCHAR(256) NOT NULL,
@@ -62,7 +63,7 @@ CREATE TABLE viajes (
         FOREIGN KEY (id_categoria)
         REFERENCES categorias(id_categoria)
         ON DELETE SET NULL,
-        
+
     CONSTRAINT fk_viajes_usuario_creador
         FOREIGN KEY (id_usuario_creador)
         REFERENCES usuarios(id_usuario)
@@ -77,7 +78,7 @@ CREATE TABLE usuarios_viajes (
     id_usuario_viaje SERIAL PRIMARY KEY,
     id_viaje INT NOT NULL,
     id_usuario INT NOT NULL,
-    balance NUMERIC(10,2) DEFAULT 0,
+    balance NUMERIC(10,2) DEFAULT 0,  -- esta columna no se usa, deberiamos de borrarla (si funciona no lo tocamos)
     rol VARCHAR(16) NOT NULL,
 
     CONSTRAINT fk_usuarios_viajes_viaje
@@ -96,8 +97,6 @@ CREATE TABLE usuarios_viajes (
     CONSTRAINT chk_rol
         CHECK (rol IN ('admin', 'participante'))
 );
-
-
 
 -- =========================================
 -- TABLA: gastos
