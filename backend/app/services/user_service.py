@@ -57,6 +57,9 @@ def create_user(db: Session, user_data: UserCreate) -> User:
         raise UserConflictError(
             "No se pudo crear el usuario porque el correo ya esta registrado."
         ) from exc
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise
 
 
 def authenticate_user(db: Session, login_data: UserLogin) -> User:
@@ -153,11 +156,18 @@ def update_user(db: Session, user: User, user_data: UserUpdate) -> User:
         raise UserConflictError(
             "No se pudo actualizar el usuario con los datos enviados."
         ) from exc
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def delete_user(db: Session, user: User) -> None:
     db.delete(user)
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def _hash_reset_token(token: str) -> str:

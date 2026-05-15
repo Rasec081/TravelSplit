@@ -19,7 +19,7 @@ export default function App() {
   }
 
   if (currentView === views.register) {
-    return <RegisterScreen goTo={setCurrentView} />;
+    return <RegisterScreen goTo={setCurrentView} onLogin={saveUser} />;
   }
 
   if (currentView === views.reset) {
