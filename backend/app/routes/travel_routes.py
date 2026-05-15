@@ -448,3 +448,51 @@ def delete_travel(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error inesperado al eliminar el viaje",
         ) from exc
+
+
+@router.put("/{travel_id}/close", response_model=TravelMessageResponse)
+def close_travel(
+    travel_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+) -> TravelMessageResponse:
+    """Cierra un viaje estableciendo fecha_cierre (si no está cerrado)."""
+    print(f"\n[INFO] Iniciando cierre de viaje con ID: {travel_id}")
+
+    try:
+        travel_obj = travel.get_travel_by_id(db, travel_id)
+        if not travel_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontró un viaje con ese identificador.",
+            )
+
+        if travel_obj.fecha_cierre is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="El viaje ya está cerrado.",
+            )
+
+        closed = travel.close_travel(db, travel_obj)
+
+        travel_response = TravelResponse(
+            id_travel=closed.id_travel,
+            nombre=closed.nombre,
+            id_categoria=closed.id_categoria,
+            id_usuario_creador=closed.id_usuario_creador,
+            fecha_creacion=closed.fecha_creacion,
+            fecha_cierre=closed.fecha_cierre,
+        )
+
+        return TravelMessageResponse(message="Viaje cerrado correctamente", data=travel_response)
+    except HTTPException:
+        raise
+    except TravelConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error inesperado al cerrar el viaje",
+        ) from exc

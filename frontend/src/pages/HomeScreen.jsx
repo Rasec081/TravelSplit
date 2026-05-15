@@ -133,17 +133,23 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
             ) : null}
 
             {travels.map((travel) => (
-              <article className="trip-table-row" key={travel.id_travel}>
+              <button
+                key={travel.id_travel}
+                className="trip-table-row trip-row-button"
+                type="button"
+                onClick={() => goTo(views.travel, { travelId: travel.id_travel })}
+                aria-label={`Abrir viaje ${travel.nombre}`}
+              >
                 <div>
                   <h3>{travel.nombre}</h3>
                   <p>Gestion colaborativa de gastos</p>
                 </div>
                 <span>{participantCounts[travel.id_travel] ?? 0}</span>
                 <span className="status-badge">{getStatus(travel)}</span>
-                <button className="secondary-button" type="button">
+                <span className="trip-row-cta" aria-hidden="true">
                   Ver detalles
-                </button>
-              </article>
+                </span>
+              </button>
             ))}
           </div>
         </div>

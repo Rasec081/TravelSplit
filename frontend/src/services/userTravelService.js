@@ -12,3 +12,9 @@ export function listUsersByTravel(travelId) {
     method: "GET",
   });
 }
+
+export function deleteUserTravel(userTravelId) {
+  return request(`/user-travels/${userTravelId}`, {
+    method: "DELETE",
+  });
+}

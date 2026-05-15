@@ -6,12 +6,28 @@ export function listTravelCategories() {
   });
 }
 
+export function listExpenseCategories() {
+  return request("/categorias?tipo=gasto", {
+    method: "GET",
+  });
+}
+
 export function createTravelCategory(nombre_categoria) {
   return request("/categorias", {
     method: "POST",
     body: JSON.stringify({
       nombre_categoria,
       tipo: "viaje",
+    }),
+  });
+}
+
+export function createExpenseCategory(nombre_categoria) {
+  return request("/categorias", {
+    method: "POST",
+    body: JSON.stringify({
+      nombre_categoria,
+      tipo: "gasto",
     }),
   });
 }
