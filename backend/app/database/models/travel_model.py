@@ -20,8 +20,8 @@ class Travel(Base):
 class UserTravel(Base):
     __tablename__ = "usuarios_viajes"
 
-    id_user_travel: Mapped[int] = mapped_column(primary_key=True, index=True)
-    id_travel: Mapped[int] = mapped_column(ForeignKey("viajes.id_viaje"), nullable=False)
+    id_user_travel: Mapped[int] = mapped_column("id_usuario_viaje", primary_key=True, index=True)
+    id_travel: Mapped[int] = mapped_column("id_viaje", ForeignKey("viajes.id_viaje"), nullable=False)
     id_usuario: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False)
     balance: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
     rol: Mapped[str] = mapped_column(String(16), nullable=False)

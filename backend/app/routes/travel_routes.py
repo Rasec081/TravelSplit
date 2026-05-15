@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
@@ -8,8 +8,12 @@ from app.schemas.travel_schema import (
     TravelResponse,
     TravelUpdate,
 )
-from app.services import travel
-from app.services.exceptions import TravelConflictError
+from app.schemas.balance_schema import (
+    BalanceViajeResponse,
+    BalanceViajeMessageResponse,
+)
+from app.services import travel, balance
+from app.services.exceptions import TravelConflictError, TravelValidationError
 
 router = APIRouter(prefix="/travels", tags=["Viajes"])
 
@@ -335,6 +339,67 @@ def update_travel(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error inesperado al actualizar el viaje",
+        ) from exc
+
+
+#por que la ruta esta así?
+@router.get("/{travel_id}/balance", response_model=BalanceViajeMessageResponse)
+def get_balance_viaje(
+    travel_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+) -> BalanceViajeMessageResponse:
+    """
+    Obtiene el desglose de balance de todos los usuarios para un viaje específico.
+    
+    Calcula para cada usuario:
+    - total_pagado: suma de gastos donde fue quien pagó
+    - total_debido: suma de divisiones donde participa
+    - balance_final: total_pagado - total_debido
+    - estado: saldado, debe_recibir o debe_pagar
+    
+    Retorna información completa de todos los participantes del viaje.
+    """
+    print(f"\n[INFO] Iniciando cálculo de balance para viaje {travel_id}")
+    
+    try:
+        #aquie se va a balance.py a calcular el balance, y se va a traer toda la info necesaria para construir la respuesta
+        balance_result = balance.calculate_balance_by_travel(db, travel_id)
+        
+        travel_obj = balance_result["travel"]
+        usuarios_balance = balance_result["usuarios_balance"]
+        total_pagado_viaje = balance_result["total_pagado_viaje"]
+        total_debido_viaje = balance_result["total_debido_viaje"]
+        diferencia_viaje = balance_result["diferencia_viaje"]
+        
+        print(f"[SUCCESS] Balance calculado para {len(usuarios_balance)} usuario(s)")
+        
+        # Construir respuesta
+        balance_response = BalanceViajeResponse(
+            id_viaje=travel_obj.id_travel,
+            nombre_viaje=travel_obj.nombre,
+            cantidad_usuarios=len(usuarios_balance),
+            usuarios=usuarios_balance,
+            total_pagado_viaje=total_pagado_viaje,
+            total_debido_viaje=total_debido_viaje,
+            diferencia=diferencia_viaje,
+        )
+        
+        return BalanceViajeMessageResponse(
+            message=f"Balance calculado para viaje '{travel_obj.nombre}' con {len(usuarios_balance)} participante(s)",
+            data=balance_response,
+        )
+        
+    except TravelValidationError as exc:
+        print(f"[ERROR] Validación de viaje: {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        print(f"[ERROR] Error al calcular balance: {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al calcular el balance del viaje",
         ) from exc
 
 

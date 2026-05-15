@@ -8,12 +8,39 @@ from app.routes.gasto_routes import router as gasto_router
 from app.routes.division_gasto_routes import router as division_gasto_router
 from app.routes.categorias_routes import router as categorias_router
 from app.routes.travel_routes import router as travel_router
+from app.routes.user_travel_routes import router as user_travel_router
 from app.routes.user_routes import router as user_router
 
 app = FastAPI(
     title="TravelSplit API",
     description="Backend de TravelSplit para gestion de usuarios, viajes y gastos compartidos.",
     version="0.1.0",
+    openapi_tags=[
+        {
+            "name": "Usuarios",
+            "description": "Operaciones relacionadas con usuarios",
+        },
+        {
+            "name": "Categorías",
+            "description": "Operaciones relacionadas con categorías",
+        },
+        {
+            "name": "Viajes",
+            "description": "Operaciones relacionadas con viajes",
+        },
+        {
+            "name": "Usuarios en Viajes",
+            "description": "Gestión de participantes en viajes",
+        },
+        {
+            "name": "Gastos",
+            "description": "Operaciones relacionadas con gastos",
+        },
+        {
+            "name": "Divisiones de Gastos",
+            "description": "Operaciones para dividir gastos entre participantes",
+        },
+    ],
 )
 
 app.add_middleware(
@@ -30,10 +57,11 @@ app.add_middleware(
 )
 
 app.include_router(user_router)
-app.include_router(gasto_router)
-app.include_router(division_gasto_router)
 app.include_router(categorias_router)
 app.include_router(travel_router)
+app.include_router(user_travel_router)
+app.include_router(gasto_router)
+app.include_router(division_gasto_router)
 
 
 @app.exception_handler(HTTPException)
