@@ -29,6 +29,8 @@
 html {
   min-width: 320px;
   background: var(--bg);
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -251,68 +253,6 @@ button:disabled {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgb(0 109 91 / 12%);
   outline: none;
-}
-
-.phone-control {
-  display: grid;
-  grid-template-columns: minmax(116px, 34%) auto 1fr;
-  align-items: center;
-  min-height: 44px;
-  overflow: hidden;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
-}
-
-.phone-control:hover {
-  border-color: #aebdc1;
-  background: #fcfefe;
-}
-
-.phone-control:focus-within {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgb(0 109 91 / 12%);
-}
-
-.phone-country {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-right: 1px solid var(--border);
-  border-radius: 0;
-  padding: 0 10px;
-  color: var(--text);
-  background: transparent;
-  font-size: 13px;
-  outline: none;
-}
-
-.phone-dial-code {
-  padding: 0 10px;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 750;
-  white-space: nowrap;
-}
-
-.phone-control input {
-  height: 100%;
-  min-width: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 0 14px 0 0;
-  background: transparent;
-}
-
-.phone-control input:hover,
-.phone-control input:focus {
-  border-color: transparent;
-  box-shadow: none;
-  background: transparent;
 }
 
 .field-error,
@@ -690,6 +630,95 @@ button:disabled {
   font-weight: 800;
 }
 
+.profile-page {
+  background:
+    linear-gradient(180deg, rgb(0 109 91 / 4%), transparent 220px),
+    var(--bg);
+}
+
+.profile-content {
+  width: min(100% - 48px, 1120px);
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  margin: 0 auto;
+  padding: 34px 0 56px;
+}
+
+.profile-heading {
+  width: min(100%, 640px);
+}
+
+.profile-heading h1 {
+  margin: 4px 0 8px;
+  color: var(--text);
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.profile-heading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.profile-card {
+  width: min(100%, 640px);
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.password-control {
+  position: relative;
+}
+
+.password-control input {
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--primary);
+}
+
+.password-toggle:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.profile-actions {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-top: 2px;
+}
+
 @media (max-width: 760px) {
   .auth-page {
     padding: 22px 16px 40px;
@@ -712,10 +741,6 @@ button:disabled {
 
   .form-section {
     padding: 16px;
-  }
-
-  .phone-control {
-    grid-template-columns: 112px auto 1fr;
   }
 
   .login-links {
@@ -782,5 +807,22 @@ button:disabled {
 
   .trip-table-row .secondary-button {
     width: 100%;
+  }
+
+  .profile-content {
+    width: min(100% - 28px, 1120px);
+    padding-top: 24px;
+  }
+
+  .profile-heading h1 {
+    font-size: 24px;
+  }
+
+  .profile-card {
+    padding: 18px;
+  }
+
+  .profile-actions {
+    grid-template-columns: 1fr;
   }
 }

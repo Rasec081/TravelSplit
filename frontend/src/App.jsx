@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useStoredUser } from "./hooks/useStoredUser";
 import { HomeScreen } from "./pages/HomeScreen";
 import { LoginScreen } from "./pages/LoginScreen";
+import { ProfileScreen } from "./pages/ProfileScreen";
 import { RegisterScreen } from "./pages/RegisterScreen";
 import { ResetPasswordConfirmScreen } from "./pages/ResetPasswordConfirmScreen";
 import { ResetPasswordScreen } from "./pages/ResetPasswordScreen";
@@ -35,7 +36,22 @@ export default function App() {
       return <LoginScreen goTo={setCurrentView} onLogin={saveUser} />;
     }
 
-    return <HomeScreen currentUser={currentUser} onLogout={handleLogout} />;
+    return <HomeScreen currentUser={currentUser} goTo={setCurrentView} onLogout={handleLogout} />;
+  }
+
+  if (currentView === views.profile) {
+    if (!currentUser) {
+      return <LoginScreen goTo={setCurrentView} onLogin={saveUser} />;
+    }
+
+    return (
+      <ProfileScreen
+        currentUser={currentUser}
+        goTo={setCurrentView}
+        onLogout={handleLogout}
+        onUserUpdate={saveUser}
+      />
+    );
   }
 
   return <LoginScreen goTo={setCurrentView} onLogin={saveUser} />;

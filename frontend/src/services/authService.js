@@ -39,6 +39,13 @@ export function registerUser(userData) {
   });
 }
 
+export function updateUser(userId, userData) {
+  return request(`/usuarios/${userId}`, {
+    method: "PUT",
+    body: JSON.stringify(userData),
+  });
+}
+
 export function requestPasswordReset(resetData) {
   return request("/usuarios/password-reset/request", {
     method: "POST",
