@@ -114,7 +114,7 @@ export function RegisterScreen({ goTo, onLogin }) {
               id="register-email"
               label="Correo electrónico"
               onChange={(event) => updateField("email", event.target.value)}
-              placeholder="Juan@figma.com"
+              placeholder="Juan@example.com"
               type="email"
               value={formData.email}
             />

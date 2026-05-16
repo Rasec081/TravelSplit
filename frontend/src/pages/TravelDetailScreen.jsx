@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Modal } from "../components/modals/Modal";
@@ -322,7 +322,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             </div>
 
             {gastos.length === 0 ? (
-              <p className="hint-text">Aún no hay gastos registrados.</p>
+              <p className="hint-text empty-expenses-message">Aún no hay gastos registrados.</p>
             ) : (
               <ul className="expense-list" aria-label="Lista de gastos">
                 {gastos
@@ -494,3 +494,4 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     </main>
   );
 }
+

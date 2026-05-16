@@ -649,13 +649,13 @@ button:disabled {
 }
 
 .home-header-inner {
-  width: min(100% - 48px, 1120px);
+  width: 100%;
   min-height: 72px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 24px;
-  margin: 0 auto;
+  padding: 0 24px;
 }
 
 .home-nav {
@@ -912,6 +912,10 @@ button:disabled {
   margin-top: 18px;
 }
 
+.empty-expenses-message {
+  padding-left: 24px;
+}
+
 .travel-footer {
   display: flex;
   justify-content: center;
@@ -992,6 +996,14 @@ button:disabled {
   font-weight: 850;
   letter-spacing: 0.4px;
   text-transform: uppercase;
+}
+
+.trip-table-head span:nth-child(2),
+.trip-table-head span:nth-child(3),
+.trip-row-button > span:nth-child(2),
+.trip-row-button > span:nth-child(3) {
+  justify-self: center;
+  text-align: center;
 }
 
 .trip-table-row h3,

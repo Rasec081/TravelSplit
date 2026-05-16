@@ -19,7 +19,7 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
   const statusByTravelId = useMemo(() => {
     const map = {};
     for (const travel of travels) {
-      map[travel.id_travel] = travel?.fecha_cierre ? "Finalizado" : "Activo";
+      map[travel.id_travel] = isTravelClosed(travel) ? "Finalizado" : "Iniciado";
     }
     return map;
   }, [travels]);
@@ -132,14 +132,14 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
                 className="trip-table-row trip-row-button"
                 type="button"
                 onClick={() => goTo(views.travel, { travelId: travel.id_travel })}
-                aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${statusByTravelId[travel.id_travel] ?? "Activo"}. Presione Enter para abrir.`}
+                aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${statusByTravelId[travel.id_travel] ?? "Iniciado"}. Presione Enter para abrir.`}
               >
                 <div>
                   <h3>{travel.nombre}</h3>
                   <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoría"}</p>
                 </div>
                 <span>{participantCounts[travel.id_travel] ?? 0}</span>
-                <span className="status-badge">{statusByTravelId[travel.id_travel] ?? "Activo"}</span>
+                <span className="status-badge">{statusByTravelId[travel.id_travel] ?? "Iniciado"}</span>
               </button>
             ))}
           </div>
@@ -160,4 +160,14 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
       />
     </main>
   );
+}
+
+function isTravelClosed(travel) {
+  if (!travel?.fecha_cierre) return false;
+
+  const createdAt = new Date(travel.fecha_creacion).getTime();
+  const closedAt = new Date(travel.fecha_cierre).getTime();
+  if (!Number.isFinite(createdAt) || !Number.isFinite(closedAt)) return true;
+
+  return closedAt - createdAt > 5000;
 }

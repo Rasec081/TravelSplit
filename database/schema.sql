@@ -56,8 +56,7 @@ CREATE TABLE viajes (
     id_usuario_creador INT NOT NULL,
     fecha_creacion TIMESTAMP NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
-    fecha_cierre TIMESTAMP
-        DEFAULT CURRENT_TIMESTAMP,
+    fecha_cierre TIMESTAMP,
 
     CONSTRAINT fk_viajes_categoria
         FOREIGN KEY (id_categoria)
