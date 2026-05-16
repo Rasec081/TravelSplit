@@ -75,10 +75,10 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
       <section className="home-content">
         <div className="dashboard-hero">
           <div>
-            <p className="eyebrow">Panel de gestion</p>
+            <p className="eyebrow">Panel de gestión</p>
             <h1 id="home-title">Viajes y gastos compartidos</h1>
             <p>
-              Supervisa tus viajes, participantes y proximas acciones desde una vista clara y
+              Supervisa tus viajes, participantes y próximas acciones desde una vista clara y
               ordenada.
             </p>
           </div>
@@ -95,11 +95,11 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
           <div className="panel-header">
             <div>
               <h2>Mis viajes</h2>
-              <p>Listado de viajes disponibles para seguimiento y colaboracion.</p>
+              <p>Listado de viajes disponibles para seguimiento y colaboración.</p>
             </div>
             <div className="panel-header-actions" aria-label="Acciones de viajes">
               <button className="secondary-button" type="button" onClick={() => setIsCategoriesOpen(true)}>
-                Administrar categorias
+                Administrar categorías
               </button>
               <button className="create-trip-button" type="button" onClick={() => setIsModalOpen(true)}>
                 <span aria-hidden="true">+</span>
@@ -136,7 +136,7 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               >
                 <div>
                   <h3>{travel.nombre}</h3>
-                  <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoria"}</p>
+                  <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoría"}</p>
                 </div>
                 <span>{participantCounts[travel.id_travel] ?? 0}</span>
                 <span className="status-badge">{statusByTravelId[travel.id_travel] ?? "Activo"}</span>

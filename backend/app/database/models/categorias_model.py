@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database.connection import Base
 
 '''
-pasa la tabla de categorias a un objeto en python, con sus respectivas columnas y tipos de datos
+Pasa la tabla de categorías a un objeto en Python, con sus respectivas columnas y tipos de datos.
 '''
 class Categoria(Base):
     __tablename__ = "categorias"

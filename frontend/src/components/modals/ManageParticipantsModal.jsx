@@ -105,7 +105,7 @@ export function ManageParticipantsModal({
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-      setErrors({ addEmail: "Ingresa un correo valido." });
+      setErrors({ addEmail: "Ingresa un correo válido." });
       return;
     }
     if (participantByEmail.has(normalized)) {
@@ -326,7 +326,7 @@ export function ManageParticipantsModal({
         title="Eliminar participante"
         description={
           pendingDelete
-            ? `Eliminar a ${pendingDelete.nombre} del viaje? Esta accion no se puede deshacer.`
+            ? `¿Eliminar a ${pendingDelete.nombre} del viaje? Esta acción no se puede deshacer.`
             : ""
         }
         confirmLabel="Eliminar"

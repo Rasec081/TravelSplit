@@ -6,10 +6,10 @@ from app.schemas.categorias_schema import CategoriaCreate, CategoriaUpdate
 from app.services.exceptions import CategoriaConflictError
 
 '''
-aqui van los cruds y aqui es donde insertamos los datos en la db
+Aquí van los CRUD y se insertan los datos en la base de datos.
 '''
 def get_categorias(db: Session, tipo: str | None = None) -> list[Categoria]: 
-    #da la opcion de filtrar por tipo, por default van todas
+    # Da la opción de filtrar por tipo; por defecto se devuelven todas.
     query = db.query(Categoria)
     if tipo:
         query = query.filter(Categoria.tipo == tipo)

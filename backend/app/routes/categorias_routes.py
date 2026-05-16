@@ -15,8 +15,8 @@ router = APIRouter(prefix="/categorias", tags=["Categorías"])
 
 
 '''
-aqui van las validaciones de datos que se reciben del frontend, y aqui se llaman a 
-las funciones del servicio de categorias para insertar los datos en la db
+Aquí van las validaciones de datos que se reciben del frontend, y aquí se llaman a
+las funciones del servicio de categorías para insertar los datos en la base de datos.
 '''
 
 # ============================================================================

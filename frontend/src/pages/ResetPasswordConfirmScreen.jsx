@@ -18,13 +18,13 @@ export function ResetPasswordConfirmScreen({ goTo, token }) {
     setSuccessMessage("");
 
     if (!password) {
-      nextErrors.password = "Ingresa tu nueva contrasena.";
+      nextErrors.password = "Ingresa tu nueva contraseña.";
     } else if (password.length < 8) {
-      nextErrors.password = "La contrasena debe tener al menos 8 caracteres.";
+      nextErrors.password = "La contraseña debe tener al menos 8 caracteres.";
     }
 
     if (confirmPassword !== password) {
-      nextErrors.confirmPassword = "Las contrasenas no coinciden.";
+      nextErrors.confirmPassword = "Las contraseñas no coinciden.";
     }
 
     setErrors(nextErrors);
@@ -53,25 +53,25 @@ export function ResetPasswordConfirmScreen({ goTo, token }) {
   return (
     <main className="auth-page auth-page-reset" aria-labelledby="reset-confirm-title">
       <section className="auth-card reset-card">
-        <h1 id="reset-confirm-title">Definir nueva contrasena</h1>
+        <h1 id="reset-confirm-title">Definir nueva contraseña</h1>
         <p className="auth-intro">Actualiza tus credenciales para mantener la cuenta protegida.</p>
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <TextInput
             error={errors.password}
             id="new-password"
-            label="Nueva contrasena"
+            label="Nueva contraseña"
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Minimo 8 caracteres"
+            placeholder="Mínimo 8 caracteres"
             type="password"
             value={password}
           />
           <TextInput
             error={errors.confirmPassword}
             id="confirm-new-password"
-            label="Confirma tu nueva contrasena"
+            label="Confirma tu nueva contraseña"
             onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Repite la contrasena"
+            placeholder="Repite la contraseña"
             type="password"
             value={confirmPassword}
           />
@@ -88,12 +88,12 @@ export function ResetPasswordConfirmScreen({ goTo, token }) {
           ) : null}
 
           <button className="primary-button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Guardando..." : "Guardar nueva contrasena"}
+            {isSubmitting ? "Guardando..." : "Guardar nueva contraseña"}
           </button>
         </form>
 
         <button className="reset-login-link" type="button" onClick={() => goTo(views.login)}>
-          Iniciar sesion
+          Iniciar sesión
         </button>
       </section>
     </main>

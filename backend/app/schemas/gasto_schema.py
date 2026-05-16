@@ -7,12 +7,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 class GastoBase(BaseModel):
     id_viaje: int = Field(gt=0, examples=[1], description="Identificador del viaje.")
-    id_usuario: int = Field(gt=0, examples=[1], description="Usuario que pago el gasto.")
+    id_usuario: int = Field(gt=0, examples=[1], description="Usuario que pagó el gasto.")
     id_categoria: int | None = Field(
         default=None,
         gt=0,
         examples=[2],
-        description="Categoria opcional del gasto.",
+        description="Categoría opcional del gasto.",
     )
     monto: Decimal = Field(
         max_digits=10,
@@ -22,8 +22,8 @@ class GastoBase(BaseModel):
     )
     descripcion: str = Field(
         max_length=256,
-        examples=["Cena del primer dia"],
-        description="Descripcion breve del gasto.",
+        examples=["Cena del primer día"],
+        description="Descripción breve del gasto.",
     )
 
     @field_validator("descripcion")
@@ -40,7 +40,7 @@ class GastoBase(BaseModel):
 class GastoCreate(GastoBase):
     """Request para crear un gasto.
     
-    Nota: Las divisiones se crean de forma independiente via POST /divisiones-gastos
+    Nota: Las divisiones se crean de forma independiente vía POST /divisiones-gastos.
     """
     pass
 

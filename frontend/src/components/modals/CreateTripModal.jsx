@@ -44,7 +44,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
     let cancelled = false;
     async function loadData() {
       setIsInitializing(true);
-      setStatusMessage("Cargando categorias y usuarios disponibles...");
+      setStatusMessage("Cargando categorías y usuarios disponibles...");
       setErrors({});
 
       try {
@@ -94,7 +94,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
     if (!normalized) {
       nextErrors.participantEmail = "Ingresa el correo del participante.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-      nextErrors.participantEmail = "Ingresa un correo electronico valido.";
+      nextErrors.participantEmail = "Ingresa un correo electrónico válido.";
     } else if (normalizedParticipants.includes(normalized)) {
       nextErrors.participantEmail = "Ese participante ya fue agregado.";
     } else if (normalized === String(currentUser?.correo ?? "").toLowerCase()) {
@@ -127,7 +127,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
     }
 
     if (!categoryId) {
-      nextErrors.categoryId = "Selecciona una categoria.";
+      nextErrors.categoryId = "Selecciona una categoría.";
     }
 
     setErrors(nextErrors);
@@ -164,7 +164,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
 
       const travel = travelResponse?.data;
       if (!travel) {
-        throw new Error("No se recibio el viaje creado desde el backend.");
+        throw new Error("No se recibió el viaje creado desde el backend.");
       }
 
       setStatusMessage("Agregando participantes...");
@@ -195,7 +195,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
   return (
     <>
       <Modal
-        description="Define el nombre, selecciona una categoria y agrega participantes."
+        description="Define el nombre, selecciona una categoría y agrega participantes."
         isDismissable={!isLoading}
         isOpen={isOpen}
         onClose={handleClose}
@@ -223,7 +223,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
           />
 
           <div className="field">
-            <label htmlFor="create-trip-category">Categoria del viaje</label>
+            <label htmlFor="create-trip-category">Categoría del viaje</label>
             <div className="category-picker-row">
               <select
                 aria-describedby={errors.categoryId ? "create-trip-category-error" : undefined}
@@ -234,7 +234,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
                 onChange={(event) => setCategoryId(event.target.value)}
                 value={categoryId}
               >
-                <option value="">Seleccione opcion</option>
+                <option value="">Seleccione una opción</option>
                 {categories.map((category) => (
                   <option key={category.id_categoria} value={category.id_categoria}>
                     {category.nombre_categoria}
@@ -314,7 +314,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
                 ))}
               </ul>
             ) : (
-              <p className="hint-text">Aun no agregas participantes (opcional).</p>
+              <p className="hint-text">Aún no agregas participantes (opcional).</p>
             )}
           </fieldset>
 

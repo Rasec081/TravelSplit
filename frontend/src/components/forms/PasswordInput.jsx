@@ -38,7 +38,7 @@ export function PasswordInput({ id, label, placeholder, error, ...props }) {
           {...props}
         />
         <button
-          aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
           className="password-toggle"
           type="button"
           onClick={() => setShowPassword((currentValue) => !currentValue)}

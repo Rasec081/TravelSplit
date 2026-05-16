@@ -20,13 +20,13 @@ def send_password_reset_email(to_email: str, reset_link: str) -> None:
         return
 
     message = EmailMessage()
-    message["Subject"] = "Recupera tu contrasena de TravelSplit"
+    message["Subject"] = "Recupera tu contraseña de TravelSplit"
     message["From"] = smtp_from
     message["To"] = to_email
     message.set_content(
         "Hola,\n\n"
-        "Recibimos una solicitud para restablecer tu contrasena de TravelSplit.\n"
-        f"Usa este enlace para crear una nueva contrasena:\n\n{reset_link}\n\n"
+        "Recibimos una solicitud para restablecer tu contraseña de TravelSplit.\n"
+        f"Usa este enlace para crear una nueva contraseña:\n\n{reset_link}\n\n"
         "El enlace vence en 15 minutos. Si no solicitaste este cambio, puedes ignorar este correo.\n"
     )
 

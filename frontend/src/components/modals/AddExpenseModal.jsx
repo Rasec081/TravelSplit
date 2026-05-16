@@ -44,7 +44,7 @@ export function AddExpenseModal({
   const statusId = useId();
   const [statusMessage, setStatusMessage] = useState("");
   const [errors, setErrors] = useState({});
-  const [step, setStep] = useState(1); // 1 datos, 2 participantes, 3 division, 4 resumen
+  const [step, setStep] = useState(1); // 1 datos, 2 participantes, 3 división, 4 resumen
 
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
@@ -119,16 +119,16 @@ export function AddExpenseModal({
   function getErrors() {
     const nextErrors = {};
 
-    if (!descripcion.trim()) nextErrors.descripcion = "Ingresa el nombre o descripcion del gasto.";
+    if (!descripcion.trim()) nextErrors.descripcion = "Ingresa el nombre o descripción del gasto.";
 
     const totalCents = parseAmountToCents(monto);
-    if (totalCents === null || totalCents <= 0) nextErrors.monto = "Ingresa un monto valido mayor a 0.";
+    if (totalCents === null || totalCents <= 0) nextErrors.monto = "Ingresa un monto válido mayor a 0.";
 
     const cat = Number(categoriaId);
-    if (!cat) nextErrors.categoriaId = "Selecciona una categoria de gasto.";
+    if (!cat) nextErrors.categoriaId = "Selecciona una categoría de gasto.";
 
     const payer = Number(pagadorId);
-    if (!payer || !travelParticipantIds.includes(payer)) nextErrors.pagadorId = "Selecciona un pagador valido.";
+    if (!payer || !travelParticipantIds.includes(payer)) nextErrors.pagadorId = "Selecciona un pagador válido.";
 
     const selected = selectedParticipantIds.map(Number).filter(Boolean);
     if (selected.length === 0) nextErrors.participants = "Selecciona al menos un participante.";
@@ -272,19 +272,19 @@ export function AddExpenseModal({
 
       const gasto = gastoResponse?.data;
       if (!gasto?.id_gasto) {
-        throw new Error("No se recibio el gasto creado desde el backend.");
+        throw new Error("No se recibió el gasto creado desde el backend.");
       }
 
-      setStatusMessage("Creando division del gasto...");
+      setStatusMessage("Creando división del gasto...");
 
       const participantes = computeParticipantsPayload(totalCents);
       if (participantes.length === 0) {
-        throw new Error("La division no incluye montos. Ajusta la seleccion de participantes.");
+        throw new Error("La división no incluye montos. Ajusta la selección de participantes.");
       }
 
       await createDivisionGasto({
         id_gasto: gasto.id_gasto,
-        nombre: `Division: ${descripcion.trim()}`.slice(0, 128),
+        nombre: `División: ${descripcion.trim()}`.slice(0, 128),
         monto_total: centsToFixed(totalCents),
         participantes,
       });
@@ -346,7 +346,7 @@ export function AddExpenseModal({
             </button>
             {step > 1 ? (
               <button className="secondary-button" type="button" onClick={goBack} disabled={isSaving}>
-                Atras
+                Atrás
               </button>
             ) : null}
             {step < 4 ? (
@@ -380,7 +380,7 @@ export function AddExpenseModal({
               Participantes
             </li>
             <li className={step === 3 ? "active" : ""} aria-current={step === 3 ? "step" : undefined}>
-              Division
+              División
             </li>
             <li className={step === 4 ? "active" : ""} aria-current={step === 4 ? "step" : undefined}>
               Resumen
@@ -393,7 +393,7 @@ export function AddExpenseModal({
                 autoFocus
                 error={errors.descripcion}
                 id="expense-desc"
-                label="Nombre o descripcion"
+                label="Nombre o descripción"
                 onChange={(event) => setDescripcion(event.target.value)}
                 placeholder="Ej: Cena grupal"
                 value={descripcion}
@@ -411,7 +411,7 @@ export function AddExpenseModal({
 
               <div className="field">
                 <div className="field-label-row">
-                  <label htmlFor="expense-category">Categoria</label>
+                  <label htmlFor="expense-category">Categoría</label>
                   <button
                     className="secondary-button"
                     type="button"
@@ -419,7 +419,7 @@ export function AddExpenseModal({
                     onClick={() => setIsManageCategoriesOpen(true)}
                     disabled={isSaving}
                   >
-                    Agregar categorias
+                    Agregar categorías
                   </button>
                 </div>
                 <select
@@ -430,7 +430,7 @@ export function AddExpenseModal({
                   aria-describedby={errors.categoriaId ? "expense-category-error" : undefined}
                   aria-invalid={errors.categoriaId ? "true" : "false"}
                 >
-                  <option value="">Seleccione opcion</option>
+                  <option value="">Seleccione una opción</option>
                   {categories.map((cat) => (
                     <option key={cat.id_categoria} value={cat.id_categoria}>
                       {cat.nombre_categoria}
@@ -445,7 +445,7 @@ export function AddExpenseModal({
               </div>
 
               <div className="field">
-                <label htmlFor="expense-payer">Quien pago</label>
+                <label htmlFor="expense-payer">Quién pagó</label>
                 <select
                   id="expense-payer"
                   name="expense-payer"
@@ -497,7 +497,7 @@ export function AddExpenseModal({
 
           {step === 3 ? (
             <fieldset className="modal-fieldset">
-              <legend>Division</legend>
+              <legend>División</legend>
               <p className="hint-text">{divisionHelp}</p>
               {errors.division ? (
                 <p className="field-error" role="alert">
@@ -505,7 +505,7 @@ export function AddExpenseModal({
                 </p>
               ) : null}
 
-              <div className="radio-grid" role="radiogroup" aria-label="Tipo de division">
+              <div className="radio-grid" role="radiogroup" aria-label="Tipo de división">
                 <label className="radio-row">
                   <input
                     type="radio"
@@ -514,7 +514,7 @@ export function AddExpenseModal({
                     checked={divisionType === "equal"}
                     onChange={() => setDivisionType("equal")}
                   />
-                  <span>Division igualitaria</span>
+                  <span>División igualitaria</span>
                 </label>
                 <label className="radio-row">
                   <input
@@ -524,7 +524,7 @@ export function AddExpenseModal({
                     checked={divisionType === "shares"}
                     onChange={() => setDivisionType("shares")}
                   />
-                  <span>Division por partes o porcentajes</span>
+                  <span>División por partes o porcentajes</span>
                 </label>
                 <label className="radio-row">
                   <input
@@ -534,12 +534,12 @@ export function AddExpenseModal({
                     checked={divisionType === "custom"}
                     onChange={() => setDivisionType("custom")}
                   />
-                  <span>Division personalizada</span>
+                  <span>División personalizada</span>
                 </label>
               </div>
 
               {divisionType === "shares" ? (
-                <div className="division-editor" aria-label="Asignacion por partes o porcentajes">
+                <div className="division-editor" aria-label="Asignación por partes o porcentajes">
                   <fieldset className="inline-fieldset">
                     <legend>Modo</legend>
                     <label className="radio-row">
@@ -564,7 +564,7 @@ export function AddExpenseModal({
                     </label>
                   </fieldset>
 
-                  <div className="division-grid" role="group" aria-label="Asignacion">
+                  <div className="division-grid" role="group" aria-label="Asignación">
                     {selectedParticipantIds.map((id) => {
                       const p = participantById.get(id);
                       return (
@@ -591,7 +591,7 @@ export function AddExpenseModal({
               ) : null}
 
               {divisionType === "custom" ? (
-                <div className="division-editor" aria-label="Asignacion personalizada">
+                <div className="division-editor" aria-label="Asignación personalizada">
                   <div className="division-grid" role="group" aria-label="Montos por participante">
                     {selectedParticipantIds.map((id) => {
                       const p = participantById.get(id);
@@ -622,9 +622,9 @@ export function AddExpenseModal({
           {step === 4 ? (
             <section className="summary-card" aria-label="Resumen del gasto">
               <p className="hint-text">
-                Revisa el resumen antes de guardar. Si algo no coincide, vuelve con “Atras”.
+                Revisa el resumen antes de guardar. Si algo no coincide, vuelve con “Atrás”.
               </p>
-              <ul className="summary-list" aria-label="Detalle de division">
+              <ul className="summary-list" aria-label="Detalle de división">
                 {preview.map((row) => (
                   <li key={row.id_usuario} className="summary-row">
                     <span>{row.nombre}</span>

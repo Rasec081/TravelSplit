@@ -7,13 +7,13 @@ class UserBase(BaseModel):
     nombre: str = Field(
         min_length=2,
         max_length=64,
-        examples=["Ana Martinez"],
+        examples=["Ana Martínez"],
         description="Nombre visible del usuario.",
     )
     correo: EmailStr = Field(
         max_length=64,
         examples=["ana@example.com"],
-        description="Correo electronico unico del usuario.",
+        description="Correo electrónico único del usuario.",
     )
 
     @field_validator("nombre")
@@ -21,7 +21,7 @@ class UserBase(BaseModel):
     def validate_nombre(cls, value: str) -> str:
         normalized_value = value.strip()
         if len(normalized_value) < 2:
-            raise ValueError("El nombre debe tener al menos 2 caracteres utiles.")
+            raise ValueError("El nombre debe tener al menos 2 caracteres útiles.")
         return normalized_value
 
 
@@ -30,7 +30,7 @@ class UserCreate(UserBase):
         min_length=8,
         max_length=128,
         examples=["UnaClaveSegura123"],
-        description="Contrasena del usuario. Se almacena hasheada.",
+        description="Contraseña del usuario. Se almacena hasheada.",
     )
 
 
@@ -38,13 +38,13 @@ class UserLogin(BaseModel):
     correo: EmailStr = Field(
         max_length=64,
         examples=["ana@example.com"],
-        description="Correo electronico del usuario.",
+        description="Correo electrónico del usuario.",
     )
     contrasena: str = Field(
         min_length=8,
         max_length=128,
         examples=["UnaClaveSegura123"],
-        description="Contrasena del usuario.",
+        description="Contraseña del usuario.",
     )
 
 
@@ -52,7 +52,7 @@ class PasswordResetRequest(BaseModel):
     correo: EmailStr = Field(
         max_length=64,
         examples=["ana@example.com"],
-        description="Correo electronico que recibira el enlace de recuperacion.",
+        description="Correo electrónico que recibirá el enlace de recuperación.",
     )
 
 
@@ -66,7 +66,7 @@ class PasswordResetConfirm(BaseModel):
         min_length=8,
         max_length=128,
         examples=["NuevaClaveSegura123"],
-        description="Nueva contrasena del usuario.",
+        description="Nueva contraseña del usuario.",
     )
 
 
@@ -83,7 +83,7 @@ class UserUpdate(BaseModel):
 
         normalized_value = value.strip()
         if len(normalized_value) < 2:
-            raise ValueError("El nombre debe tener al menos 2 caracteres utiles.")
+            raise ValueError("El nombre debe tener al menos 2 caracteres útiles.")
         return normalized_value
 
     @model_validator(mode="after")

@@ -14,7 +14,7 @@ from app.routes.user_routes import router as user_router
 
 app = FastAPI(
     title="TravelSplit API",
-    description="Backend de TravelSplit para gestion de usuarios, viajes y gastos compartidos.",
+    description="Backend de TravelSplit para gestión de usuarios, viajes y gastos compartidos.",
     version="0.1.0",
     openapi_tags=[
         {
@@ -96,7 +96,7 @@ async def validation_exception_handler(
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
-            "error": "Los datos enviados no son validos.",
+            "error": "Los datos enviados no son válidos.",
             "details": errors,
         },
     )
@@ -107,7 +107,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={
-            "error": "No se pudo completar la operacion en la base de datos. Intenta nuevamente."
+            "error": "No se pudo completar la operación en la base de datos. Intenta nuevamente."
         },
     )
 
@@ -116,7 +116,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
 async def unexpected_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": "Ocurrio un error inesperado. Intenta nuevamente."},
+        content={"error": "Ocurrió un error inesperado. Intenta nuevamente."},
     )
 
 

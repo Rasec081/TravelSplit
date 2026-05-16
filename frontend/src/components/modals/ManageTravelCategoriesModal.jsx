@@ -37,7 +37,7 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
   async function refresh() {
     setIsLoading(true);
     setErrors({});
-    setStatusMessage("Cargando categorias...");
+    setStatusMessage("Cargando categorías...");
     try {
       const response = await listTravelCategories();
       setCategories(response ?? []);
@@ -71,7 +71,7 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
     const nextErrors = {};
 
     if (!name) {
-      nextErrors.newCategoryName = "Ingresa el nombre de la categoria.";
+      nextErrors.newCategoryName = "Ingresa el nombre de la categoría.";
     }
 
     setErrors(nextErrors);
@@ -79,12 +79,12 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
 
     try {
       setIsLoading(true);
-      setStatusMessage("Agregando categoria...");
+      setStatusMessage("Agregando categoría...");
       await createTravelCategory(name);
       setNewCategoryName("");
       await refresh();
       onChanged?.();
-      setStatusMessage("Categoria agregada correctamente.");
+      setStatusMessage("Categoría agregada correctamente.");
     } catch (error) {
       setErrors({ form: error.message });
     } finally {
@@ -96,13 +96,13 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
     setEditingId(category.id_categoria);
     setEditingName(category.nombre_categoria ?? "");
     setErrors({});
-    setStatusMessage(`Editando categoria ${category.nombre_categoria}.`);
+    setStatusMessage(`Editando categoría ${category.nombre_categoria}.`);
   }
 
   function cancelEditing() {
     setEditingId(null);
     setEditingName("");
-    setStatusMessage("Edicion cancelada.");
+    setStatusMessage("Edición cancelada.");
   }
 
   async function saveEditing() {
@@ -111,7 +111,7 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
 
     const nextErrors = {};
     if (!name) {
-      nextErrors.editingName = "El nombre no puede estar vacio.";
+      nextErrors.editingName = "El nombre no puede estar vacío.";
     }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -124,7 +124,7 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
       setEditingName("");
       await refresh();
       onChanged?.();
-      setStatusMessage("Categoria actualizada correctamente.");
+      setStatusMessage("Categoría actualizada correctamente.");
     } catch (error) {
       setErrors({ form: error.message });
     } finally {
@@ -140,12 +140,12 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
     if (!pendingDelete?.id_categoria) return;
     try {
       setIsLoading(true);
-      setStatusMessage("Eliminando categoria...");
+      setStatusMessage("Eliminando categoría...");
       await deleteCategory(pendingDelete.id_categoria);
       setPendingDelete(null);
       await refresh();
       onChanged?.();
-      setStatusMessage("Categoria eliminada.");
+      setStatusMessage("Categoría eliminada.");
     } catch (error) {
       setErrors({ form: error.message });
     } finally {
@@ -156,10 +156,10 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
   return (
     <>
       <Modal
-        description="Administra las categorias disponibles para viajes. Usa Tab para navegar y Escape para cerrar."
+        description="Administra las categorías disponibles para viajes. Usa Tab para navegar y Escape para cerrar."
         isOpen={isOpen}
         onClose={handleClose}
-        title="Categorias de viaje"
+        title="Categorías de viaje"
         footer={
           <>
             <button className="secondary-button" type="button" onClick={handleClose}>
@@ -172,7 +172,7 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
           {statusMessage}
         </div>
 
-        <section className="modal-form" aria-label="Listado de categorias">
+        <section className="modal-form" aria-label="Listado de categorías">
           {errors.form ? (
             <p className="form-error" role="alert">
               {errors.form}
@@ -180,9 +180,9 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
           ) : null}
 
           {sortedCategories.length === 0 && !isLoading ? (
-            <p className="hint-text">No hay categorias de viaje registradas.</p>
+            <p className="hint-text">No hay categorías de viaje registradas.</p>
           ) : (
-            <ul className="category-list" aria-label="Categorias registradas">
+            <ul className="category-list" aria-label="Categorías registradas">
               {sortedCategories.map((category) => {
                 const isEditing = editingId === category.id_categoria;
                 return (
@@ -193,7 +193,7 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
                           autoFocus
                           error={errors.editingName}
                           id={editingInputId}
-                          label="Nombre de categoria"
+                          label="Nombre de categoría"
                           onChange={(event) => setEditingName(event.target.value)}
                           value={editingName}
                         />
@@ -241,14 +241,14 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
           )}
         </section>
 
-        <form className="modal-form" onSubmit={handleCreate} aria-label="Agregar categoria">
+        <form className="modal-form" onSubmit={handleCreate} aria-label="Agregar categoría">
           <TextInput
             autoFocus={editingId === null}
             error={errors.newCategoryName}
             id="new-travel-category"
-            label="Agregar categoria"
+            label="Agregar categoría"
             onChange={(event) => setNewCategoryName(event.target.value)}
-            placeholder="Ej: Academico"
+            placeholder="Ej: Académico"
             value={newCategoryName}
           />
           <div className="modal-actions-inline">
@@ -261,10 +261,10 @@ export function ManageTravelCategoriesModal({ isOpen, onClose, onChanged }) {
 
       <ConfirmDialog
         isOpen={Boolean(pendingDelete)}
-        title="Eliminar categoria"
+        title="Eliminar categoría"
         description={
           pendingDelete
-            ? `Eliminar la categoria "${pendingDelete.nombre_categoria}"? Esta accion no se puede deshacer.`
+            ? `¿Eliminar la categoría "${pendingDelete.nombre_categoria}"? Esta acción no se puede deshacer.`
             : ""
         }
         confirmLabel="Eliminar"

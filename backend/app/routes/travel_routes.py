@@ -18,8 +18,8 @@ from app.services.exceptions import TravelConflictError, TravelValidationError
 router = APIRouter(prefix="/travels", tags=["Viajes"])
 
 '''
-aqui van las validaciones de datos que se reciben del frontend, y aqui se llaman a 
-las funciones del servicio de viajes para insertar los datos en la db
+Aquí van las validaciones de datos que se reciben del frontend, y aquí se llaman a
+las funciones del servicio de viajes para insertar los datos en la base de datos.
 
 PD: segun yo aca se debe de verificar que el usuario en efecto sea admin
 '''
@@ -362,7 +362,7 @@ def get_balance_viaje(
     print(f"\n[INFO] Iniciando cálculo de balance para viaje {travel_id}")
     
     try:
-        #aquie se va a balance.py a calcular el balance, y se va a traer toda la info necesaria para construir la respuesta
+        # Aquí se llama a balance.py para calcular el balance y traer la información necesaria para construir la respuesta.
         balance_result = balance.calculate_balance_by_travel(db, travel_id)
         
         travel_obj = balance_result["travel"]

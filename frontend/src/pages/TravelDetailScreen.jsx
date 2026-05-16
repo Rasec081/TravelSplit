@@ -108,7 +108,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
 
   async function refreshAll() {
     if (!travelId) {
-      setErrorMessage("No se encontro el viaje seleccionado.");
+      setErrorMessage("No se encontró el viaje seleccionado.");
       return;
     }
 
@@ -175,7 +175,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       hasError = true;
     }
     if (!categoryId) {
-      setTripCategoryError("Selecciona una categoria.");
+      setTripCategoryError("Selecciona una categoría.");
       hasError = true;
     }
     if (hasError) {
@@ -200,7 +200,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   async function handleFinalize() {
     setFinalizeError("");
     if (!canFinalize()) {
-      setFinalizeError("No se puede finalizar: aun hay balances pendientes por saldar.");
+      setFinalizeError("No se puede finalizar: aún hay balances pendientes por saldar.");
       return;
     }
     try {
@@ -322,7 +322,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             </div>
 
             {gastos.length === 0 ? (
-              <p className="hint-text">Aun no hay gastos registrados.</p>
+              <p className="hint-text">Aún no hay gastos registrados.</p>
             ) : (
               <ul className="expense-list" aria-label="Lista de gastos">
                 {gastos
@@ -392,7 +392,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       />
 
       <Modal
-        description="Actualiza el nombre y la categoria del viaje."
+        description="Actualiza el nombre y la categoría del viaje."
         isOpen={isEditTripOpen}
         onClose={() => setIsEditTripOpen(false)}
         title="Editar viaje"
@@ -427,7 +427,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                 onChange={(event) => setTripCategoryDraft(event.target.value)}
                 value={tripCategoryDraft}
               >
-                <option value="">Selecciona una categoria</option>
+                <option value="">Selecciona una categoría</option>
                 {travelCategories.map((category) => (
                   <option key={category.id_categoria} value={category.id_categoria}>
                     {category.nombre_categoria}

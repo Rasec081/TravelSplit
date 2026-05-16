@@ -40,7 +40,7 @@ export function DashboardHeader({ activeView, currentUser, goTo, onLogout }) {
             {currentUser?.nombre ?? "Mi cuenta"}
           </button>
           <button className="logout-button" type="button" onClick={onLogout}>
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </div>
       </div>

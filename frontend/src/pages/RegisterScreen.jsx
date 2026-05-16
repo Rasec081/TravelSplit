@@ -36,19 +36,19 @@ export function RegisterScreen({ goTo, onLogin }) {
     }
 
     if (!normalizedEmail) {
-      nextErrors.email = "Ingresa tu correo electronico.";
+      nextErrors.email = "Ingresa tu correo electrónico.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      nextErrors.email = "Ingresa un correo electronico valido.";
+      nextErrors.email = "Ingresa un correo electrónico válido.";
     }
 
     if (!formData.password) {
-      nextErrors.password = "Ingresa una contrasena.";
+      nextErrors.password = "Ingresa una contraseña.";
     } else if (formData.password.length < 8) {
-      nextErrors.password = "La contrasena debe tener al menos 8 caracteres.";
+      nextErrors.password = "La contraseña debe tener al menos 8 caracteres.";
     }
 
     if (formData.confirmPassword !== formData.password) {
-      nextErrors.confirmPassword = "Las contrasenas no coinciden.";
+      nextErrors.confirmPassword = "Las contraseñas no coinciden.";
     }
 
     setErrors(nextErrors);
@@ -76,20 +76,20 @@ export function RegisterScreen({ goTo, onLogin }) {
   return (
     <main className="auth-page auth-page-register" aria-labelledby="register-title">
       <button className="back-link" type="button" onClick={() => goTo(views.login)}>
-        &larr; Regresar al inicio de sesion
+        &larr; Regresar al inicio de sesión
       </button>
 
       <section className="auth-card register-card">
         <h1 id="register-title">Crear perfil de usuario</h1>
         <p className="auth-intro">
-          Completa la informacion base para administrar viajes y distribuir gastos.
+          Completa la información básica para administrar viajes y distribuir gastos.
         </p>
 
         <form className="auth-form register-form" onSubmit={handleSubmit} noValidate>
           <div className="form-section">
             <div className="section-heading">
               <p className="form-section-title">Datos personales</p>
-              <span>Informacion visible para tu equipo de viaje.</span>
+              <span>Información visible para tu equipo de viaje.</span>
             </div>
             <div className="two-columns">
               <TextInput
@@ -104,7 +104,7 @@ export function RegisterScreen({ goTo, onLogin }) {
                 id="register-lastname"
                 label="Apellido"
                 onChange={(event) => updateField("lastname", event.target.value)}
-                placeholder="Perez"
+                placeholder="Pérez"
                 value={formData.lastname}
               />
             </div>
@@ -112,7 +112,7 @@ export function RegisterScreen({ goTo, onLogin }) {
             <TextInput
               error={errors.email}
               id="register-email"
-              label="Correo electronico"
+              label="Correo electrónico"
               onChange={(event) => updateField("email", event.target.value)}
               placeholder="Juan@figma.com"
               type="email"
@@ -128,18 +128,18 @@ export function RegisterScreen({ goTo, onLogin }) {
             <TextInput
               error={errors.password}
               id="register-password"
-              label="Contrasena"
+              label="Contraseña"
               onChange={(event) => updateField("password", event.target.value)}
-              placeholder="Minimo 8 caracteres"
+              placeholder="Mínimo 8 caracteres"
               type="password"
               value={formData.password}
             />
             <TextInput
               error={errors.confirmPassword}
               id="register-confirm-password"
-              label="Confirma tu contrasena"
+              label="Confirma tu contraseña"
               onChange={(event) => updateField("confirmPassword", event.target.value)}
-              placeholder="Contrasena"
+              placeholder="Contraseña"
               type="password"
               value={formData.confirmPassword}
             />
@@ -157,9 +157,9 @@ export function RegisterScreen({ goTo, onLogin }) {
         </form>
 
         <p className="secondary-text">
-          Ya tienes una cuenta?{" "}
+          ¿Ya tienes una cuenta?{" "}
           <button type="button" onClick={() => goTo(views.login)}>
-            Inicia sesion
+            Inicia sesión
           </button>
         </p>
       </section>
