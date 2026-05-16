@@ -117,6 +117,9 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     rows.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), "es"));
     return rows;
   }, [userTravels, userById, balanceByUserId]);
+  const participantCountLabel = `${participantRows.length} ${
+    participantRows.length === 1 ? "participante" : "participantes"
+  }`;
 
   async function refreshAll() {
     if (!travelId) {
@@ -287,7 +290,10 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           <section className="dashboard-panel" aria-label="Participantes del viaje">
             <div className="panel-header">
               <div>
-                <h2>Participantes</h2>
+                <div className="section-title-row">
+                  <h2>Participantes</h2>
+                  <span>{participantCountLabel}</span>
+                </div>
                 <p>Balance individual de cada participante.</p>
               </div>
               {canEditTravel ? (
