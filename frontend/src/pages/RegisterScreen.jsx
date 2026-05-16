@@ -12,10 +12,9 @@ const initialFormData = {
   confirmPassword: "",
 };
 
-export function RegisterScreen({ goTo }) {
+export function RegisterScreen({ goTo, onLogin }) {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateField(field, value) {
@@ -53,7 +52,6 @@ export function RegisterScreen({ goTo }) {
     }
 
     setErrors(nextErrors);
-    setSuccessMessage("");
 
     if (Object.keys(nextErrors).length > 0) {
       return;
@@ -61,13 +59,13 @@ export function RegisterScreen({ goTo }) {
 
     try {
       setIsSubmitting(true);
-      await registerUser({
+      const response = await registerUser({
         nombre: fullName,
         correo: normalizedEmail,
         contrasena: formData.password,
       });
-      setSuccessMessage("Cuenta creada correctamente. Ya puedes iniciar sesion.");
-      setFormData(initialFormData);
+      onLogin(response.data);
+      goTo(views.home);
     } catch (error) {
       setErrors({ form: error.message });
     } finally {
@@ -150,11 +148,6 @@ export function RegisterScreen({ goTo }) {
           {errors.form ? (
             <p className="form-error" role="alert">
               {errors.form}
-            </p>
-          ) : null}
-          {successMessage ? (
-            <p className="form-success" role="status">
-              {successMessage}
             </p>
           ) : null}
 

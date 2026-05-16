@@ -7,12 +7,21 @@ import { ProfileScreen } from "./pages/ProfileScreen";
 import { RegisterScreen } from "./pages/RegisterScreen";
 import { ResetPasswordConfirmScreen } from "./pages/ResetPasswordConfirmScreen";
 import { ResetPasswordScreen } from "./pages/ResetPasswordScreen";
+import { TravelDetailScreen } from "./pages/TravelDetailScreen";
 import { views } from "./routes/views";
 
 export default function App() {
   const resetToken = new URLSearchParams(window.location.search).get("reset_token");
   const [currentView, setCurrentView] = useState(resetToken ? views.resetConfirm : views.login);
+  const [activeTravelId, setActiveTravelId] = useState(null);
   const { clearUser, currentUser, saveUser } = useStoredUser();
+
+  function goTo(nextView, options = {}) {
+    setCurrentView(nextView);
+    if (Object.prototype.hasOwnProperty.call(options, "travelId")) {
+      setActiveTravelId(options.travelId);
+    }
+  }
 
   function handleLogout() {
     clearUser();
@@ -20,39 +29,54 @@ export default function App() {
   }
 
   if (currentView === views.register) {
-    return <RegisterScreen goTo={setCurrentView} />;
+    return <RegisterScreen goTo={goTo} onLogin={saveUser} />;
   }
 
   if (currentView === views.reset) {
-    return <ResetPasswordScreen goTo={setCurrentView} />;
+    return <ResetPasswordScreen goTo={goTo} />;
   }
 
   if (currentView === views.resetConfirm) {
-    return <ResetPasswordConfirmScreen goTo={setCurrentView} token={resetToken} />;
+    return <ResetPasswordConfirmScreen goTo={goTo} token={resetToken} />;
   }
 
   if (currentView === views.home) {
     if (!currentUser) {
-      return <LoginScreen goTo={setCurrentView} onLogin={saveUser} />;
+      return <LoginScreen goTo={goTo} onLogin={saveUser} />;
     }
 
-    return <HomeScreen currentUser={currentUser} goTo={setCurrentView} onLogout={handleLogout} />;
+    return <HomeScreen currentUser={currentUser} goTo={goTo} onLogout={handleLogout} />;
   }
 
   if (currentView === views.profile) {
     if (!currentUser) {
-      return <LoginScreen goTo={setCurrentView} onLogin={saveUser} />;
+      return <LoginScreen goTo={goTo} onLogin={saveUser} />;
     }
 
     return (
       <ProfileScreen
         currentUser={currentUser}
-        goTo={setCurrentView}
+        goTo={goTo}
         onLogout={handleLogout}
         onUserUpdate={saveUser}
       />
     );
   }
 
-  return <LoginScreen goTo={setCurrentView} onLogin={saveUser} />;
+  if (currentView === views.travel) {
+    if (!currentUser) {
+      return <LoginScreen goTo={goTo} onLogin={saveUser} />;
+    }
+
+    return (
+      <TravelDetailScreen
+        currentUser={currentUser}
+        goTo={goTo}
+        onLogout={handleLogout}
+        travelId={activeTravelId}
+      />
+    );
+  }
+
+  return <LoginScreen goTo={goTo} onLogin={saveUser} />;
 }

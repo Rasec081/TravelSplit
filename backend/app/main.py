@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.database.init_db import init_db
 from app.routes.gasto_routes import router as gasto_router
 from app.routes.division_gasto_routes import router as division_gasto_router
 from app.routes.categorias_routes import router as categorias_router
@@ -62,6 +63,10 @@ app.include_router(travel_router)
 app.include_router(user_travel_router)
 app.include_router(gasto_router)
 app.include_router(division_gasto_router)
+
+@app.on_event("startup")
+def _startup_init_db() -> None:
+    init_db()
 
 
 @app.exception_handler(HTTPException)

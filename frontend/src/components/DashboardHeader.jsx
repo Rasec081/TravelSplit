@@ -6,10 +6,15 @@ export function DashboardHeader({ activeView, currentUser, goTo, onLogout }) {
   return (
     <header className="home-header">
       <div className="home-header-inner">
-        <div className="app-brand">
+        <button
+          className="app-brand app-brand-button"
+          type="button"
+          onClick={() => goTo(views.home)}
+          aria-label="Ir a la pantalla principal de TravelSplit"
+        >
           <span aria-hidden="true">TS</span>
           <strong>TravelSplit</strong>
-        </div>
+        </button>
         <nav aria-label="Principal" className="home-nav">
           <button
             className={`home-nav-link ${activeView === views.home ? "active" : ""}`}

@@ -1,9 +1,58 @@
+import { useEffect, useMemo, useState } from "react";
+
 import { DashboardHeader } from "../components/DashboardHeader";
-import { trips } from "../constants/trips";
+import { CreateTripModal } from "../components/modals/CreateTripModal";
+import { ManageTravelCategoriesModal } from "../components/modals/ManageTravelCategoriesModal";
 import { views } from "../routes/views";
+import { listTravels } from "../services/travelService";
+import { listUsersByTravel } from "../services/userTravelService";
 
 export function HomeScreen({ currentUser, goTo, onLogout }) {
-  const totalParticipants = trips.reduce((total, trip) => total + trip.participants, 0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [travels, setTravels] = useState([]);
+  const [participantCounts, setParticipantCounts] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const statusByTravelId = useMemo(() => {
+    const map = {};
+    for (const travel of travels) {
+      map[travel.id_travel] = travel?.fecha_cierre ? "Finalizado" : "Activo";
+    }
+    return map;
+  }, [travels]);
+
+  async function refreshTravels() {
+    setIsLoading(true);
+    setLoadError("");
+
+    try {
+      const response = await listTravels();
+      const nextTravels = response ?? [];
+      setTravels(nextTravels);
+
+      const counts = await Promise.all(
+        nextTravels.map(async (travel) => {
+          try {
+            const participants = await listUsersByTravel(travel.id_travel);
+            return [travel.id_travel, Array.isArray(participants) ? participants.length : 0];
+          } catch {
+            return [travel.id_travel, 0];
+          }
+        }),
+      );
+
+      setParticipantCounts(Object.fromEntries(counts));
+    } catch (error) {
+      setLoadError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    refreshTravels();
+  }, []);
 
   return (
     <main className="home-page" aria-labelledby="home-title">
@@ -24,24 +73,12 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               ordenada.
             </p>
           </div>
-          <button className="create-trip-button" type="button">
-            <span aria-hidden="true">+</span>
-            Crear viaje
-          </button>
         </div>
 
         <div className="metric-grid" aria-label="Resumen de viajes">
           <article className="metric-card">
             <span>Viajes registrados</span>
-            <strong>{trips.length}</strong>
-          </article>
-          <article className="metric-card">
-            <span>Participantes</span>
-            <strong>{totalParticipants}</strong>
-          </article>
-          <article className="metric-card">
-            <span>Estados activos</span>
-            <strong>{trips.filter((trip) => trip.status !== "Cerrado").length}</strong>
+            <strong>{travels.length}</strong>
           </article>
         </div>
 
@@ -51,6 +88,15 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               <h2>Mis viajes</h2>
               <p>Listado de viajes disponibles para seguimiento y colaboracion.</p>
             </div>
+            <div className="panel-header-actions" aria-label="Acciones de viajes">
+              <button className="secondary-button" type="button" onClick={() => setIsCategoriesOpen(true)}>
+                Administrar categorias
+              </button>
+              <button className="create-trip-button" type="button" onClick={() => setIsModalOpen(true)}>
+                <span aria-hidden="true">+</span>
+                Crear viaje
+              </button>
+            </div>
           </div>
 
           <div className="trip-table" aria-label="Lista de viajes">
@@ -58,24 +104,51 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               <span>Viaje</span>
               <span>Participantes</span>
               <span>Estado</span>
-              <span>Accion</span>
             </div>
-            {trips.map((trip) => (
-              <article className="trip-table-row" key={trip.id}>
+            {isLoading ? (
+              <p className="hint-text" role="status" aria-live="polite">
+                Cargando viajes...
+              </p>
+            ) : null}
+
+            {loadError ? (
+              <p className="form-error" role="alert">
+                {loadError}
+              </p>
+            ) : null}
+
+            {travels.map((travel) => (
+              <button
+                key={travel.id_travel}
+                className="trip-table-row trip-row-button"
+                type="button"
+                onClick={() => goTo(views.travel, { travelId: travel.id_travel })}
+                aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${statusByTravelId[travel.id_travel] ?? "Activo"}. Presione Enter para abrir.`}
+              >
                 <div>
-                  <h3>{trip.name}</h3>
+                  <h3>{travel.nombre}</h3>
                   <p>Gestion colaborativa de gastos</p>
                 </div>
-                <span>{trip.participants}</span>
-                <span className="status-badge">{trip.status}</span>
-                <button className="secondary-button" type="button">
-                  Ver detalles
-                </button>
-              </article>
+                <span>{participantCounts[travel.id_travel] ?? 0}</span>
+                <span className="status-badge">{statusByTravelId[travel.id_travel] ?? "Activo"}</span>
+              </button>
             ))}
           </div>
         </div>
       </section>
+
+      <CreateTripModal
+        currentUser={currentUser}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreated={() => refreshTravels()}
+      />
+
+      <ManageTravelCategoriesModal
+        isOpen={isCategoriesOpen}
+        onClose={() => setIsCategoriesOpen(false)}
+        onChanged={() => {}}
+      />
     </main>
   );
 }
