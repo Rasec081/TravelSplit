@@ -8,12 +8,13 @@ import { listTravelCategories } from "../services/categoriesService";
 import { listTravels } from "../services/travelService";
 import { listUsersByTravel } from "../services/userTravelService";
 
-export function HomeScreen({ currentUser, goTo, onLogout }) {
+export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [travels, setTravels] = useState([]);
   const [categories, setCategories] = useState([]);
   const [participantCounts, setParticipantCounts] = useState({});
+  const [toastMessage, setToastMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
   const statusByTravelId = useMemo(() => {
@@ -63,8 +64,25 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
     refreshTravels();
   }, []);
 
+  useEffect(() => {
+    if (!flashMessage) return undefined;
+
+    setToastMessage(flashMessage);
+    const timeoutId = window.setTimeout(() => {
+      setToastMessage("");
+    }, 3500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [flashMessage]);
+
   return (
     <main className="home-page" aria-labelledby="home-title">
+      {toastMessage ? (
+        <div className="toast-message" role="status" aria-live="polite">
+          {toastMessage}
+        </div>
+      ) : null}
+
       <DashboardHeader
         activeView={views.home}
         currentUser={currentUser}
@@ -126,22 +144,29 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               </p>
             ) : null}
 
-            {travels.map((travel) => (
-              <button
-                key={travel.id_travel}
-                className="trip-table-row trip-row-button"
-                type="button"
-                onClick={() => goTo(views.travel, { travelId: travel.id_travel })}
-                aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${statusByTravelId[travel.id_travel] ?? "Iniciado"}. Presione Enter para abrir.`}
-              >
-                <div>
-                  <h3>{travel.nombre}</h3>
-                  <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoría"}</p>
-                </div>
-                <span>{participantCounts[travel.id_travel] ?? 0}</span>
-                <span className="status-badge">{statusByTravelId[travel.id_travel] ?? "Iniciado"}</span>
-              </button>
-            ))}
+            {travels.map((travel) => {
+              const isClosed = isTravelClosed(travel);
+              const status = statusByTravelId[travel.id_travel] ?? "Iniciado";
+
+              return (
+                <button
+                  key={travel.id_travel}
+                  className={`trip-table-row trip-row-button ${isClosed ? "trip-row-closed" : ""}`}
+                  type="button"
+                  onClick={() => goTo(views.travel, { travelId: travel.id_travel })}
+                  aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${status}. Presione Enter para abrir.`}
+                >
+                  <div>
+                    <h3>{travel.nombre}</h3>
+                    <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoría"}</p>
+                  </div>
+                  <span>{participantCounts[travel.id_travel] ?? 0}</span>
+                  <span className={`status-badge ${isClosed ? "status-badge-closed" : ""}`}>
+                    {status}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>

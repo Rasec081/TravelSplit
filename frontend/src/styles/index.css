@@ -819,6 +819,18 @@ button:disabled {
   justify-content: flex-end;
 }
 
+.readonly-trip-note {
+  width: fit-content;
+  margin: 10px 0 0;
+  border: 1px solid #cfd9dc;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #4f5f63;
+  background: #eef3f4;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .travel-section-grid {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
@@ -974,6 +986,20 @@ button:disabled {
   background: var(--surface-muted);
 }
 
+.trip-row-button.trip-row-closed {
+  background: #f6f8f8;
+}
+
+.trip-row-button.trip-row-closed:hover {
+  background: #eef3f4;
+}
+
+.trip-row-closed h3,
+.trip-row-closed p,
+.trip-row-closed > span:not(.status-badge) {
+  color: #58696d;
+}
+
 .trip-row-button:active {
   transform: none;
 }
@@ -1030,6 +1056,28 @@ button:disabled {
   color: var(--primary-dark);
   background: var(--success-soft);
   font-size: 12px;
+  font-weight: 800;
+}
+
+.status-badge-closed {
+  border-color: #c7d1d4;
+  color: #4f5f63;
+  background: #eef3f4;
+}
+
+.toast-message {
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  z-index: 40;
+  max-width: min(360px, calc(100vw - 48px));
+  border: 1px solid #b9ded5;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  color: var(--primary-dark);
+  background: #effaf6;
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
   font-weight: 800;
 }
 

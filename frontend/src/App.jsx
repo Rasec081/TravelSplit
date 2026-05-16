@@ -14,10 +14,12 @@ export default function App() {
   const resetToken = new URLSearchParams(window.location.search).get("reset_token");
   const [currentView, setCurrentView] = useState(resetToken ? views.resetConfirm : views.login);
   const [activeTravelId, setActiveTravelId] = useState(null);
+  const [viewOptions, setViewOptions] = useState({});
   const { clearUser, currentUser, saveUser } = useStoredUser();
 
   function goTo(nextView, options = {}) {
     setCurrentView(nextView);
+    setViewOptions(options);
     if (Object.prototype.hasOwnProperty.call(options, "travelId")) {
       setActiveTravelId(options.travelId);
     }
@@ -45,7 +47,14 @@ export default function App() {
       return <LoginScreen goTo={goTo} onLogin={saveUser} />;
     }
 
-    return <HomeScreen currentUser={currentUser} goTo={goTo} onLogout={handleLogout} />;
+    return (
+      <HomeScreen
+        currentUser={currentUser}
+        flashMessage={viewOptions.flashMessage}
+        goTo={goTo}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   if (currentView === views.profile) {

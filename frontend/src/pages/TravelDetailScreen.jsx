@@ -33,6 +33,16 @@ function balanceClass(balance) {
   return "balance-zero";
 }
 
+function isTravelClosed(travel) {
+  if (!travel?.fecha_cierre) return false;
+
+  const createdAt = new Date(travel.fecha_creacion).getTime();
+  const closedAt = new Date(travel.fecha_cierre).getTime();
+  if (!Number.isFinite(createdAt) || !Number.isFinite(closedAt)) return true;
+
+  return closedAt - createdAt > 5000;
+}
+
 export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const [travel, setTravel] = useState(null);
   const [balance, setBalance] = useState(null);
@@ -61,6 +71,8 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     if (!travel || !currentUser) return false;
     return travel.id_usuario_creador === currentUser.id_usuario;
   }, [travel, currentUser]);
+  const isClosed = useMemo(() => isTravelClosed(travel), [travel]);
+  const canEditTravel = isAdmin && !isClosed;
 
   const userById = useMemo(() => {
     return new Map((users ?? []).map((user) => [user.id_usuario, user]));
@@ -206,7 +218,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     try {
       await closeTravel(travelId);
       setIsFinalizeOpen(false);
-      await refreshAll();
+      goTo(views.home, { flashMessage: "El viaje se ha finalizado correctamente." });
     } catch (error) {
       setFinalizeError(error.message);
     }
@@ -230,13 +242,18 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             </button>
             <h1 id="travel-title">{travel?.nombre ?? "Viaje"}</h1>
             <p className="hint-text">Resumen de balances y gastos del viaje.</p>
+            {isClosed ? (
+              <p className="readonly-trip-note" role="status">
+                Viaje finalizado. Esta vista es solo de lectura.
+              </p>
+            ) : null}
           </div>
 
           <div className="travel-actions">
             <button className="secondary-button" type="button" onClick={refreshAll} disabled={isLoading}>
               Actualizar
             </button>
-            {isAdmin ? (
+            {canEditTravel ? (
               <>
                 <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(true)}>
                   Editar viaje
@@ -273,7 +290,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                 <h2>Participantes</h2>
                 <p>Balance individual de cada participante.</p>
               </div>
-              {isAdmin ? (
+              {canEditTravel ? (
                 <div className="panel-header-actions">
                   <button
                     className="primary-button"
@@ -316,9 +333,11 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                 <h2>Gastos recientes</h2>
                 <p>Historial organizado de gastos del viaje.</p>
               </div>
-              <button className="create-trip-button" type="button" onClick={() => setIsAddGastoOpen(true)}>
-                Agregar gasto
-              </button>
+              {!isClosed ? (
+                <button className="create-trip-button" type="button" onClick={() => setIsAddGastoOpen(true)}>
+                  Agregar gasto
+                </button>
+              ) : null}
             </div>
 
             {gastos.length === 0 ? (
@@ -349,7 +368,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             )}
           </section>
 
-        {isAdmin ? (
+        {canEditTravel ? (
           <div className="travel-footer">
             <button className="secondary-button" type="button" onClick={() => setIsFinalizeOpen(true)}>
               Finalizar viaje
