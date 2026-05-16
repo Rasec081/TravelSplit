@@ -56,6 +56,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
 
   const [isManageParticipantsOpen, setIsManageParticipantsOpen] = useState(false);
   const [isTravelCategoriesOpen, setIsTravelCategoriesOpen] = useState(false);
+  const [isPersonalBalanceOpen, setIsPersonalBalanceOpen] = useState(false);
 
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
   const [tripNameDraft, setTripNameDraft] = useState("");
@@ -86,6 +87,11 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     const list = balance?.data?.usuarios ?? [];
     return new Map(list.map((entry) => [entry.id_usuario, entry]));
   }, [balance]);
+
+  const myBalanceEntry = useMemo(() => {
+    if (!currentUser) return null;
+    return balanceByUserId.get(currentUser.id_usuario) ?? null;
+  }, [balanceByUserId, currentUser]);
 
   const myBalance = useMemo(() => {
     if (!currentUser) return 0;
@@ -249,15 +255,24 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             ) : null}
           </div>
 
-          <div className="travel-actions">
-            <button className="secondary-button" type="button" onClick={refreshAll} disabled={isLoading}>
-              Actualizar
-            </button>
-            {canEditTravel ? (
-              <>
-                <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(true)}>
-                  Editar viaje
-                </button>
+        <div className="travel-actions">
+          <button className="secondary-button" type="button" onClick={refreshAll} disabled={isLoading}>
+            Actualizar
+          </button>
+          <button
+            aria-haspopup="dialog"
+            className="secondary-button"
+            type="button"
+            onClick={() => setIsPersonalBalanceOpen(true)}
+            disabled={isLoading}
+          >
+            Balance
+          </button>
+          {canEditTravel ? (
+            <>
+              <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(true)}>
+                Editar viaje
+              </button>
               </>
             ) : null}
           </div>
@@ -288,7 +303,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             <div className="panel-header">
               <div>
                 <h2>Participantes</h2>
-                <p>Balance individual de cada participante.</p>
+                <p>{isAdmin ? "Balance individual de cada participante." : "Integrantes del viaje."}</p>
               </div>
               {canEditTravel ? (
                 <div className="panel-header-actions">
@@ -303,28 +318,35 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
               ) : null}
             </div>
 
-            <div className="participant-table" role="table" aria-label="Tabla de participantes">
-              <div className="participant-row-head no-actions" role="row">
-                <span role="columnheader">Usuario</span>
-                <span role="columnheader">Balance</span>
-              </div>
+            {isAdmin ? (
+              <div className="participant-table" role="table" aria-label="Tabla de participantes con balance">
+                <div className="participant-row-head no-actions" role="row">
+                  <span role="columnheader">Usuario</span>
+                  <span role="columnheader">Balance</span>
+                </div>
 
-              {participantRows.map((row) => (
-                <div
-                  className="participant-row-item no-actions"
-                  role="row"
-                  key={row.id_usuario}
-                >
-                  <div role="cell">
+                {participantRows.map((row) => (
+                  <div className="participant-row-item no-actions" role="row" key={row.id_usuario}>
+                    <div role="cell">
+                      <strong>{row.nombre}</strong>
+                      {row.correo ? <div className="muted">{row.correo}</div> : null}
+                    </div>
+                    <div role="cell" className={`participant-balance ${balanceClass(row.balance_final)}`}>
+                      {formatCurrency(row.balance_final)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ul className="participant-list" aria-label="Lista de participantes">
+                {participantRows.map((row) => (
+                  <li key={row.id_usuario} className="participant-list-item">
                     <strong>{row.nombre}</strong>
                     {row.correo ? <div className="muted">{row.correo}</div> : null}
-                  </div>
-                  <div role="cell" className={`participant-balance ${balanceClass(row.balance_final)}`}>
-                    {formatCurrency(row.balance_final)}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="dashboard-panel travel-panel-spacing" aria-label="Gastos recientes">
@@ -409,6 +431,75 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           await refreshAll();
         }}
       />
+
+      <Modal
+        description="Consulta tu balance personal dentro de este viaje."
+        isOpen={isPersonalBalanceOpen}
+        onClose={() => setIsPersonalBalanceOpen(false)}
+        title="Mi balance"
+        footer={
+          <button className="primary-button" type="button" onClick={() => setIsPersonalBalanceOpen(false)}>
+            Cerrar
+          </button>
+        }
+      >
+        <div className="modal-form" aria-live="polite">
+          <p className="hint-text">
+            <strong>Viaje:</strong> {travel?.nombre ?? "—"}
+            <br />
+            <strong>Usuario:</strong> {currentUser?.nombre ?? "—"}
+          </p>
+
+          {isLoading ? <p className="hint-text">Cargando balance…</p> : null}
+
+          {!isLoading && balance?.data?.usuarios?.length === 0 ? (
+            <p className="hint-text">Este viaje aún no tiene gastos registrados.</p>
+          ) : null}
+
+          {!isLoading && balance?.data?.usuarios?.length > 0 && !myBalanceEntry ? (
+            <p className="hint-text">No hay movimientos asociados a tu usuario en este viaje.</p>
+          ) : null}
+
+          {!isLoading && myBalanceEntry ? (
+            <div className="personal-balance-grid" aria-label="Desglose de balance personal">
+              <div className="personal-balance-row">
+                <span>Total pagado</span>
+                <strong>{formatCurrency(myBalanceEntry.total_pagado)}</strong>
+              </div>
+              <div className="personal-balance-row">
+                <span>Total que me corresponde</span>
+                <strong>{formatCurrency(myBalanceEntry.total_debido)}</strong>
+              </div>
+              <div className="personal-balance-row">
+                <span>Balance final</span>
+                <strong className={balanceClass(myBalanceEntry.balance_final)}>
+                  {formatCurrency(myBalanceEntry.balance_final)}
+                </strong>
+              </div>
+
+              <div className="personal-balance-status" role="status">
+                {Number(myBalanceEntry.balance_final) < 0 ? (
+                  <p>
+                    <strong>Debes pagar</strong> {formatCurrency(Math.abs(Number(myBalanceEntry.balance_final)))} en este
+                    viaje.
+                  </p>
+                ) : Number(myBalanceEntry.balance_final) > 0 ? (
+                  <p>
+                    <strong>Te deben</strong> {formatCurrency(Number(myBalanceEntry.balance_final))} en este viaje.
+                  </p>
+                ) : (
+                  <p>No tienes deudas pendientes en este viaje.</p>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          <p className="hint-text">
+            Nota: por privacidad, aquí solo se muestra tu balance. Para ver el balance completo del grupo se requiere una
+            vista administrativa.
+          </p>
+        </div>
+      </Modal>
 
       <Modal
         description="Actualiza el nombre y la categoría del viaje."

@@ -1271,6 +1271,15 @@ button:disabled {
   gap: 10px;
 }
 
+.participant-list-item {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  display: grid;
+  gap: 2px;
+}
+
 .participant-chip {
   display: flex;
   align-items: center;
@@ -1292,6 +1301,32 @@ button:disabled {
   grid-template-columns: 1fr 1fr;
   gap: 14px;
   margin-top: 6px;
+}
+
+.personal-balance-grid {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.personal-balance-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.personal-balance-row span {
+  color: var(--text-muted);
+}
+
+.personal-balance-status {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
 }
 
 .modal-actions.single-action {
