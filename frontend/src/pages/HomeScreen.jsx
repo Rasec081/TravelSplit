@@ -5,7 +5,7 @@ import { CreateTripModal } from "../components/modals/CreateTripModal";
 import { ManageTravelCategoriesModal } from "../components/modals/ManageTravelCategoriesModal";
 import { views } from "../routes/views";
 import { listTravelCategories } from "../services/categoriesService";
-import { listTravels } from "../services/travelService";
+import { listTravelsByUser } from "../services/travelService";
 import { listUsersByTravel } from "../services/userTravelService";
 
 export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
@@ -34,7 +34,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
 
     try {
       const [response, categoryResponse] = await Promise.all([
-        listTravels(),
+        listTravelsByUser(currentUser.id_usuario),
         listTravelCategories(),
       ]);
       const nextTravels = response ?? [];

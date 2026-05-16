@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.database.models.travel_model import Travel, UserTravel
 from app.schemas.travel_schema import TravelCreate, TravelUpdate
@@ -11,6 +12,18 @@ from app.services.exceptions import TravelConflictError
 def get_travels(db: Session) -> list[Travel]:
     """Obtiene todos los viajes."""
     return db.query(Travel).order_by(Travel.id_travel).all()
+
+
+def get_travels_by_user(db: Session, user_id: int) -> list[Travel]:
+    """Obtiene los viajes en los que el usuario participa o que creó."""
+    return (
+        db.query(Travel)
+        .outerjoin(UserTravel, Travel.id_travel == UserTravel.id_travel)
+        .filter(or_(UserTravel.id_usuario == user_id, Travel.id_usuario_creador == user_id))
+        .distinct()
+        .order_by(Travel.id_travel)
+        .all()
+    )
 
 
 def get_travel_by_id(db: Session, travel_id: int) -> Travel | None:
