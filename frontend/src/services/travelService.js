@@ -13,6 +13,12 @@ export function listTravels() {
   });
 }
 
+export function listTravelsByUser(userId) {
+  return request(`/travels/by-user/${userId}`, {
+    method: "GET",
+  });
+}
+
 export function getTravel(travelId) {
   return request(`/travels/${travelId}`, {
     method: "GET",

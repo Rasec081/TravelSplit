@@ -208,6 +208,32 @@ def list_travels(
         ) from exc
 
 
+@router.get("/by-user/{user_id}", response_model=list[TravelResponse])
+def list_travels_by_user(
+    user_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+) -> list[TravelResponse]:
+    """Lista los viajes en los que el usuario participa o que creó."""
+    try:
+        travels = travel.get_travels_by_user(db, user_id)
+        return [
+            TravelResponse(
+                id_travel=t.id_travel,
+                nombre=t.nombre,
+                id_categoria=t.id_categoria,
+                id_usuario_creador=t.id_usuario_creador,
+                fecha_creacion=t.fecha_creacion,
+                fecha_cierre=t.fecha_cierre,
+            )
+            for t in travels
+        ]
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al obtener los viajes del usuario",
+        ) from exc
+
+
 @router.get("/{travel_id}", response_model=TravelResponse)
 def get_travel(
     travel_id: int,
