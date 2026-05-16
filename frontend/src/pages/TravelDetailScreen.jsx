@@ -240,7 +240,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       <section className="travel-content">
         <div className="travel-hero">
           <div>
-            <button className="back-link" type="button" onClick={() => goTo(views.home)}>
+            <button className="travel-back-link" type="button" onClick={() => goTo(views.home)}>
               &larr; Volver a mis viajes
             </button>
             <h1 id="travel-title">{travel?.nombre ?? "Viaje"}</h1>

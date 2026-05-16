@@ -309,9 +309,37 @@ button:disabled {
   align-items: center;
 }
 
+.expense-division-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.division-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.division-section-heading h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.division-section-heading span {
+  border: 1px solid #b9ded5;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: var(--primary-dark);
+  background: var(--success-soft);
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .stepper {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   padding: 0;
   margin: 0;
@@ -319,6 +347,11 @@ button:disabled {
 }
 
 .stepper li {
+  min-width: 0;
+}
+
+.stepper button {
+  width: 100%;
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 8px 10px;
@@ -329,7 +362,7 @@ button:disabled {
   background: var(--surface-muted);
 }
 
-.stepper li.active {
+.stepper button.active {
   color: var(--primary-dark);
   border-color: #b9ded5;
   background: var(--success-soft);
@@ -596,6 +629,7 @@ button:disabled {
 .secondary-text button,
 .reset-login-link,
 .back-link,
+.travel-back-link,
 .logout-button {
   border: 0;
   padding: 0;
@@ -610,6 +644,7 @@ button:disabled {
 .secondary-text button:hover,
 .reset-login-link:hover,
 .back-link:hover,
+.travel-back-link:hover,
 .logout-button:hover {
   color: var(--primary-dark);
   text-decoration: underline;
@@ -791,6 +826,12 @@ button:disabled {
   overflow: hidden;
 }
 
+.travel-page {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
 .travel-content {
   width: min(100% - 48px, 1120px);
   margin: 0 auto;
@@ -803,6 +844,19 @@ button:disabled {
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
+}
+
+.travel-back-link {
+  position: absolute;
+  top: 88px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .travel-hero h1 {
@@ -1473,6 +1527,12 @@ button:disabled {
   .travel-content {
     width: min(100% - 28px, 1120px);
     padding-top: 24px;
+  }
+
+  .travel-back-link {
+    position: static;
+    width: fit-content;
+    margin-bottom: 8px;
   }
 
   .travel-hero {

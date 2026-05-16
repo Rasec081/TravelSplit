@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { Modal } from "./Modal";
 import { TextInput } from "../forms/TextInput";
@@ -40,8 +40,24 @@ function sanitizeDecimalInput(value) {
   return sanitized;
 }
 
+function sanitizePercentInput(value) {
+  const sanitizedValue = sanitizeDecimalInput(value);
+  if (!sanitizedValue) return "";
+
+  const numericValue = Number(sanitizedValue);
+  if (!Number.isFinite(numericValue)) return "";
+  if (numericValue > 100) return "100";
+  if (numericValue < 0) return "0";
+  return sanitizedValue;
+}
+
 function sanitizeIntegerInput(value) {
   return String(value ?? "").replace(/\D/g, "");
+}
+
+function defaultPercentFor(count) {
+  if (count <= 0) return "";
+  return String(Number((100 / count).toFixed(2)));
 }
 
 function splitCentsEvenly(totalCents, userIds) {
@@ -66,9 +82,10 @@ export function AddExpenseModal({
   onCreated,
 }) {
   const statusId = useId();
+  const isSubmittingRef = useRef(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [errors, setErrors] = useState({});
-  const [step, setStep] = useState(1); // 1 datos, 2 participantes, 3 división, 4 resumen
+  const [step, setStep] = useState(1); // 1 datos, 2 división
 
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
@@ -77,9 +94,11 @@ export function AddExpenseModal({
   const [selectedParticipantIds, setSelectedParticipantIds] = useState([]);
 
   const [divisionType, setDivisionType] = useState("equal"); // equal | shares | custom
-  const [sharesMode, setSharesMode] = useState("percent"); // percent | parts
+  const [sharesMode, setSharesMode] = useState("parts"); // parts | percent
   const [shares, setShares] = useState({}); // id_usuario -> number
   const [customAmounts, setCustomAmounts] = useState({}); // id_usuario -> string input
+  const [lastSyncedSharesMode, setLastSyncedSharesMode] = useState("parts");
+  const [lastSyncedParticipantKey, setLastSyncedParticipantKey] = useState("");
 
   const [isSaving, setIsSaving] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
@@ -91,17 +110,26 @@ export function AddExpenseModal({
   const travelParticipantIds = useMemo(() => {
     return (participants ?? []).map((p) => p.id_usuario);
   }, [participants]);
+  const selectedParticipantKey = useMemo(() => {
+    return selectedParticipantIds.map(String).sort().join("|");
+  }, [selectedParticipantIds]);
+  const selectedParticipantCountLabel = `${selectedParticipantIds.length} ${
+    selectedParticipantIds.length === 1 ? "seleccionado" : "seleccionados"
+  }`;
 
   useEffect(() => {
     if (!isOpen) return;
     setStatusMessage("");
+    isSubmittingRef.current = false;
     setErrors({});
     setStep(1);
     setDescripcion("");
     setMonto("");
     setCategoriaId("");
     setDivisionType("equal");
-    setSharesMode("percent");
+    setSharesMode("parts");
+    setLastSyncedSharesMode("parts");
+    setLastSyncedParticipantKey("");
     setShares({});
     setCustomAmounts({});
 
@@ -118,16 +146,38 @@ export function AddExpenseModal({
   }, [isOpen, pagadorId, travelParticipantIds, currentUser]);
 
   useEffect(() => {
-    if (sharesMode !== "parts") return;
+    if (selectedParticipantIds.length === 0) {
+      setShares({});
+      setLastSyncedParticipantKey("");
+      return;
+    }
 
+    const modeChanged = lastSyncedSharesMode !== sharesMode;
+    const participantsChanged = lastSyncedParticipantKey !== selectedParticipantKey;
+    const defaultValue = sharesMode === "parts" ? "1" : defaultPercentFor(selectedParticipantIds.length);
     setShares((current) => {
-      const sanitizedEntries = Object.entries(current).map(([id, value]) => [
-        id,
-        sanitizeIntegerInput(value),
-      ]);
-      return Object.fromEntries(sanitizedEntries);
+      const nextShares = {};
+
+      for (const id of selectedParticipantIds) {
+        const key = String(id);
+        const currentValue = current[key];
+        const sanitizedValue = sharesMode === "parts"
+          ? sanitizeIntegerInput(currentValue)
+          : sanitizePercentInput(currentValue);
+        nextShares[key] = modeChanged || participantsChanged ? defaultValue : sanitizedValue || defaultValue;
+      }
+
+      return nextShares;
     });
-  }, [sharesMode]);
+    setLastSyncedSharesMode(sharesMode);
+    setLastSyncedParticipantKey(selectedParticipantKey);
+  }, [
+    selectedParticipantIds,
+    selectedParticipantKey,
+    sharesMode,
+    lastSyncedSharesMode,
+    lastSyncedParticipantKey,
+  ]);
 
   function toggleParticipant(id) {
     setSelectedParticipantIds((current) => {
@@ -139,7 +189,7 @@ export function AddExpenseModal({
   }
 
   function setShareValue(id, value) {
-    const sanitizedValue = sharesMode === "parts" ? sanitizeIntegerInput(value) : sanitizeDecimalInput(value);
+    const sanitizedValue = sharesMode === "parts" ? sanitizeIntegerInput(value) : sanitizePercentInput(value);
 
     setShares((current) => ({
       ...current,
@@ -251,50 +301,59 @@ export function AddExpenseModal({
       .map((row) => ({ id_usuario: row.id_usuario, monto: centsToFixed(row.cents) }));
   }
 
-  function validateStep(nextStep) {
+  function validateFields(fields) {
     const all = getErrors();
-    const allowed =
-      nextStep === 1
-        ? ["descripcion", "monto", "categoriaId", "pagadorId"]
-        : nextStep === 2
-          ? ["participants"]
-          : nextStep === 3
-            ? ["division"]
-            : ["descripcion", "monto", "categoriaId", "pagadorId", "participants", "division"];
-
     const filtered = Object.fromEntries(
-      Object.entries(all).filter(([key]) => allowed.includes(key)),
+      Object.entries(all).filter(([key]) => fields.includes(key)),
     );
     setErrors(filtered);
     return Object.keys(filtered).length === 0;
   }
 
-  function goNext() {
-    const next = Math.min(4, step + 1);
-    if (step === 1 && !validateStep(1)) return;
-    if (step === 2 && !validateStep(2)) return;
-    if (step === 3 && !validateStep(3)) return;
-    setStep(next);
+  function goToStep(nextStep, { validate = false } = {}) {
+    if (validate && nextStep === 2 && !validateFields(["descripcion", "monto", "categoriaId", "pagadorId"])) {
+      return;
+    }
+
+    setErrors({});
+    setStep(nextStep);
   }
 
-  function goBack() {
+  function goNext(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    goToStep(2, { validate: true });
+  }
+
+  function goBack(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
     setErrors({});
-    setStep((current) => Math.max(1, current - 1));
+    setStep(1);
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
+    event.stopPropagation();
+
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     setStatusMessage("");
 
     const all = getErrors();
     if (Object.keys(all).length > 0) {
       setErrors(all);
-      setStep(1);
+      const dataFields = ["descripcion", "monto", "categoriaId", "pagadorId"];
+      setStep(Object.keys(all).some((key) => dataFields.includes(key)) ? 1 : 2);
       return;
     }
 
     const totalCents = parseAmountToCents(monto);
     if (totalCents === null) return;
+
+    isSubmittingRef.current = true;
 
     try {
       setIsSaving(true);
@@ -333,6 +392,7 @@ export function AddExpenseModal({
     } catch (error) {
       setErrors((current) => ({ ...current, form: error.message }));
     } finally {
+      isSubmittingRef.current = false;
       setIsSaving(false);
     }
   }
@@ -383,16 +443,16 @@ export function AddExpenseModal({
               Cancelar
             </button>
             {step > 1 ? (
-              <button className="secondary-button" type="button" onClick={goBack} disabled={isSaving}>
-                Atrás
+              <button key="back-to-data" className="secondary-button" type="button" onClick={goBack} disabled={isSaving}>
+                Volver a datos
               </button>
             ) : null}
-            {step < 4 ? (
-              <button className="create-trip-button" type="button" onClick={goNext} disabled={isSaving}>
-                Siguiente
+            {step === 1 ? (
+              <button key="go-to-division" className="create-trip-button" type="button" onClick={goNext} disabled={isSaving}>
+                Ir a división
               </button>
             ) : (
-              <button className="create-trip-button" type="submit" form="add-expense-form" disabled={isSaving}>
+              <button key="save-expense" className="create-trip-button" type="submit" form="add-expense-form" disabled={isSaving}>
                 {isSaving ? "Guardando..." : "Guardar gasto"}
               </button>
             )}
@@ -411,17 +471,27 @@ export function AddExpenseModal({
           ) : null}
 
           <ol className="stepper" aria-label="Progreso">
-            <li className={step === 1 ? "active" : ""} aria-current={step === 1 ? "step" : undefined}>
-              Datos
+            <li>
+              <button
+                className={step === 1 ? "active" : ""}
+                type="button"
+                onClick={() => goToStep(1)}
+                aria-current={step === 1 ? "step" : undefined}
+                disabled={isSaving}
+              >
+                Datos
+              </button>
             </li>
-            <li className={step === 2 ? "active" : ""} aria-current={step === 2 ? "step" : undefined}>
-              Participantes
-            </li>
-            <li className={step === 3 ? "active" : ""} aria-current={step === 3 ? "step" : undefined}>
-              División
-            </li>
-            <li className={step === 4 ? "active" : ""} aria-current={step === 4 ? "step" : undefined}>
-              Resumen
+            <li>
+              <button
+                className={step === 2 ? "active" : ""}
+                type="button"
+                onClick={() => goToStep(2)}
+                aria-current={step === 2 ? "step" : undefined}
+                disabled={isSaving}
+              >
+                División
+              </button>
             </li>
           </ol>
 
@@ -509,170 +579,177 @@ export function AddExpenseModal({
           ) : null}
 
           {step === 2 ? (
-            <fieldset className="modal-fieldset">
-              <legend>Participantes incluidos</legend>
-              {errors.participants ? (
-                <p className="field-error" role="alert">
-                  {errors.participants}
-                </p>
-              ) : null}
-              <div className="checkbox-grid" role="group" aria-label="Participantes del gasto">
-                {participants.map((p) => (
-                  <label key={p.id_usuario} className="checkbox-row">
+            <div className="expense-division-layout">
+              <section className="summary-card" aria-label="Participantes incluidos">
+                <div className="division-section-heading">
+                  <h3>Participantes</h3>
+                  <span>{selectedParticipantCountLabel}</span>
+                </div>
+                {errors.participants ? (
+                  <p className="field-error" role="alert">
+                    {errors.participants}
+                  </p>
+                ) : null}
+                <div className="checkbox-grid" role="group" aria-label="Participantes del gasto">
+                  {participants.map((p) => (
+                    <label key={p.id_usuario} className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        checked={selectedParticipantIds.includes(p.id_usuario)}
+                        onChange={() => toggleParticipant(p.id_usuario)}
+                      />
+                      <span>
+                        <strong>{p.nombre}</strong>
+                        {p.correo ? <span className="muted"> · {p.correo}</span> : null}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              <fieldset className="modal-fieldset">
+                <legend>División</legend>
+                <p className="hint-text">{divisionHelp}</p>
+                {errors.division ? (
+                  <p className="field-error" role="alert">
+                    {errors.division}
+                  </p>
+                ) : null}
+
+                <div className="radio-grid" role="radiogroup" aria-label="Tipo de división">
+                  <label className="radio-row">
                     <input
-                      type="checkbox"
-                      checked={selectedParticipantIds.includes(p.id_usuario)}
-                      onChange={() => toggleParticipant(p.id_usuario)}
+                      type="radio"
+                      name="division-type"
+                      value="equal"
+                      checked={divisionType === "equal"}
+                      onChange={() => setDivisionType("equal")}
                     />
-                    <span>
-                      <strong>{p.nombre}</strong>
-                      {p.correo ? <span className="muted"> · {p.correo}</span> : null}
-                    </span>
+                    <span>División igualitaria</span>
                   </label>
-                ))}
-              </div>
-            </fieldset>
-          ) : null}
-
-          {step === 3 ? (
-            <fieldset className="modal-fieldset">
-              <legend>División</legend>
-              <p className="hint-text">{divisionHelp}</p>
-              {errors.division ? (
-                <p className="field-error" role="alert">
-                  {errors.division}
-                </p>
-              ) : null}
-
-              <div className="radio-grid" role="radiogroup" aria-label="Tipo de división">
-                <label className="radio-row">
-                  <input
-                    type="radio"
-                    name="division-type"
-                    value="equal"
-                    checked={divisionType === "equal"}
-                    onChange={() => setDivisionType("equal")}
-                  />
-                  <span>División igualitaria</span>
-                </label>
-                <label className="radio-row">
-                  <input
-                    type="radio"
-                    name="division-type"
-                    value="shares"
-                    checked={divisionType === "shares"}
-                    onChange={() => setDivisionType("shares")}
-                  />
-                  <span>División por partes o porcentajes</span>
-                </label>
-                <label className="radio-row">
-                  <input
-                    type="radio"
-                    name="division-type"
-                    value="custom"
-                    checked={divisionType === "custom"}
-                    onChange={() => setDivisionType("custom")}
-                  />
-                  <span>División personalizada</span>
-                </label>
-              </div>
-
-              {divisionType === "shares" ? (
-                <div className="division-editor" aria-label="Asignación por partes o porcentajes">
-                  <fieldset className="inline-fieldset">
-                    <legend>Modo</legend>
-                    <label className="radio-row">
-                      <input
-                        type="radio"
-                        name="shares-mode"
-                        value="percent"
-                        checked={sharesMode === "percent"}
-                        onChange={() => setSharesMode("percent")}
-                      />
-                      <span>Porcentaje</span>
-                    </label>
-                    <label className="radio-row">
-                      <input
-                        type="radio"
-                        name="shares-mode"
-                        value="parts"
-                        checked={sharesMode === "parts"}
-                        onChange={() => setSharesMode("parts")}
-                      />
-                      <span>Partes</span>
-                    </label>
-                  </fieldset>
-
-                  <div className="division-grid" role="group" aria-label="Asignación">
-                    {selectedParticipantIds.map((id) => {
-                      const p = participantById.get(id);
-                      return (
-                        <div key={id} className="division-row">
-                          <span>{p?.nombre ?? `Usuario ${id}`}</span>
-                          <label className="sr-only" htmlFor={`shares-${id}`}>
-                            {sharesMode === "percent" ? "Porcentaje" : "Partes"} para {p?.nombre ?? id}
-                          </label>
-                          <input
-                            id={`shares-${id}`}
-                            inputMode="decimal"
-                            type="text"
-                            min="0"
-                            pattern={sharesMode === "percent" ? "[0-9]*[.]?[0-9]*" : "[0-9]*"}
-                            value={shares[id] ?? ""}
-                            onChange={(event) => setShareValue(id, event.target.value)}
-                          />
-                          <span className="muted">{sharesMode === "percent" ? "%" : "partes"}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <label className="radio-row">
+                    <input
+                      type="radio"
+                      name="division-type"
+                      value="shares"
+                      checked={divisionType === "shares"}
+                      onChange={() => setDivisionType("shares")}
+                    />
+                    <span>División por partes o porcentajes</span>
+                  </label>
+                  <label className="radio-row">
+                    <input
+                      type="radio"
+                      name="division-type"
+                      value="custom"
+                      checked={divisionType === "custom"}
+                      onChange={() => setDivisionType("custom")}
+                    />
+                    <span>División personalizada</span>
+                  </label>
                 </div>
-              ) : null}
 
-              {divisionType === "custom" ? (
-                <div className="division-editor" aria-label="Asignación personalizada">
-                  <div className="division-grid" role="group" aria-label="Montos por participante">
-                    {selectedParticipantIds.map((id) => {
-                      const p = participantById.get(id);
-                      return (
-                        <div key={id} className="division-row">
-                          <span>{p?.nombre ?? `Usuario ${id}`}</span>
-                          <label className="sr-only" htmlFor={`custom-${id}`}>
-                            Monto para {p?.nombre ?? id}
-                          </label>
-                          <input
-                            id={`custom-${id}`}
-                            inputMode="decimal"
-                            pattern="[0-9]*[.]?[0-9]*"
-                            type="text"
-                            value={customAmounts[id] ?? ""}
-                            onChange={(event) => setCustomAmountValue(id, event.target.value)}
-                          />
-                          <span className="muted">CRC</span>
-                        </div>
-                      );
-                    })}
+                {divisionType === "shares" ? (
+                  <div className="division-editor" aria-label="Asignación por partes o porcentajes">
+                    <fieldset className="inline-fieldset">
+                      <legend>Modo</legend>
+                      <label className="radio-row">
+                        <input
+                          type="radio"
+                          name="shares-mode"
+                          value="parts"
+                          checked={sharesMode === "parts"}
+                          onChange={() => setSharesMode("parts")}
+                        />
+                        <span>Partes</span>
+                      </label>
+                      <label className="radio-row">
+                        <input
+                          type="radio"
+                          name="shares-mode"
+                          value="percent"
+                          checked={sharesMode === "percent"}
+                          onChange={() => setSharesMode("percent")}
+                        />
+                        <span>Porcentaje</span>
+                      </label>
+                    </fieldset>
+
+                    <div className="division-grid" role="group" aria-label="Asignación">
+                      {selectedParticipantIds.map((id) => {
+                        const p = participantById.get(id);
+                        return (
+                          <div key={id} className="division-row">
+                            <span>{p?.nombre ?? `Usuario ${id}`}</span>
+                            <label className="sr-only" htmlFor={`shares-${id}`}>
+                              {sharesMode === "percent" ? "Porcentaje" : "Partes"} para {p?.nombre ?? id}
+                            </label>
+                            <input
+                              id={`shares-${id}`}
+                              inputMode={sharesMode === "percent" ? "decimal" : "numeric"}
+                              type="number"
+                              min="0"
+                              max={sharesMode === "percent" ? "100" : undefined}
+                              step={sharesMode === "percent" ? "1" : "1"}
+                              value={shares[id] ?? ""}
+                              onChange={(event) => setShareValue(id, event.target.value)}
+                            />
+                            <span className="muted">{sharesMode === "percent" ? "%" : "partes"}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <p className="hint-text">Puedes dejar un monto en 0 para omitir a un participante.</p>
-                </div>
-              ) : null}
-            </fieldset>
-          ) : null}
+                ) : null}
 
-          {step === 4 ? (
-            <section className="summary-card" aria-label="Resumen del gasto">
-              <p className="hint-text">
-                Revisa el resumen antes de guardar. Si algo no coincide, vuelve con “Atrás”.
-              </p>
-              <ul className="summary-list" aria-label="Detalle de división">
-                {preview.map((row) => (
-                  <li key={row.id_usuario} className="summary-row">
-                    <span>{row.nombre}</span>
-                    <strong>{row.monto}</strong>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                {divisionType === "custom" ? (
+                  <div className="division-editor" aria-label="Asignación personalizada">
+                    <div className="division-grid" role="group" aria-label="Montos por participante">
+                      {selectedParticipantIds.map((id) => {
+                        const p = participantById.get(id);
+                        return (
+                          <div key={id} className="division-row">
+                            <span>{p?.nombre ?? `Usuario ${id}`}</span>
+                            <label className="sr-only" htmlFor={`custom-${id}`}>
+                              Monto para {p?.nombre ?? id}
+                            </label>
+                            <input
+                              id={`custom-${id}`}
+                              inputMode="decimal"
+                              pattern="[0-9]*[.]?[0-9]*"
+                              type="text"
+                              value={customAmounts[id] ?? ""}
+                              onChange={(event) => setCustomAmountValue(id, event.target.value)}
+                            />
+                            <span className="muted">CRC</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="hint-text">Puedes dejar un monto en 0 para omitir a un participante.</p>
+                  </div>
+                ) : null}
+              </fieldset>
+
+              <section className="summary-card" aria-label="Resumen del gasto">
+                <div className="division-section-heading">
+                  <h3>Resumen</h3>
+                  <span>En tiempo real</span>
+                </div>
+                {preview.length > 0 ? (
+                  <ul className="summary-list" aria-label="Detalle de división">
+                    {preview.map((row) => (
+                      <li key={row.id_usuario} className="summary-row">
+                        <span>{row.nombre}</span>
+                        <strong>{row.monto}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="hint-text">Selecciona participantes y un monto válido para ver la división.</p>
+                )}
+              </section>
+            </div>
           ) : null}
         </form>
       </Modal>
