@@ -215,7 +215,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
           <TextInput
             error={errors.tripName}
             id="create-trip-name"
-            label="Asunto"
+            label="Asunto del viaje"
             autoFocus
             onChange={(event) => setTripName(event.target.value)}
             placeholder="Viaje a la playa"
@@ -223,7 +223,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
           />
 
           <div className="field">
-            <label htmlFor="create-trip-category">Categoria</label>
+            <label htmlFor="create-trip-category">Categoria del viaje</label>
             <div className="category-picker-row">
               <select
                 aria-describedby={errors.categoryId ? "create-trip-category-error" : undefined}

@@ -5,12 +5,13 @@ import { Modal } from "../components/modals/Modal";
 import { TextInput } from "../components/forms/TextInput";
 import { AddExpenseModal } from "../components/modals/AddExpenseModal";
 import { ManageParticipantsModal } from "../components/modals/ManageParticipantsModal";
+import { ManageTravelCategoriesModal } from "../components/modals/ManageTravelCategoriesModal";
 import { views } from "../routes/views";
 import { listUsers } from "../services/userService";
 import { listUsersByTravel } from "../services/userTravelService";
 import { getTravel, getTravelBalance, updateTravel, closeTravel } from "../services/travelService";
 import { listGastosByTravel } from "../services/gastoService";
-import { listExpenseCategories } from "../services/categoriesService";
+import { listExpenseCategories, listTravelCategories } from "../services/categoriesService";
 
 function formatCurrency(amount) {
   const numeric = Number(amount ?? 0);
@@ -39,14 +40,18 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const [users, setUsers] = useState([]);
   const [gastos, setGastos] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
+  const [travelCategories, setTravelCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const [isManageParticipantsOpen, setIsManageParticipantsOpen] = useState(false);
+  const [isTravelCategoriesOpen, setIsTravelCategoriesOpen] = useState(false);
 
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
   const [tripNameDraft, setTripNameDraft] = useState("");
+  const [tripCategoryDraft, setTripCategoryDraft] = useState("");
   const [tripNameError, setTripNameError] = useState("");
+  const [tripCategoryError, setTripCategoryError] = useState("");
 
   const [isFinalizeOpen, setIsFinalizeOpen] = useState(false);
   const [finalizeError, setFinalizeError] = useState("");
@@ -118,6 +123,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         usersResponse,
         gastosResponse,
         expenseCategoriesResponse,
+        travelCategoriesResponse,
       ] = await Promise.all([
         getTravel(travelId),
         getTravelBalance(travelId),
@@ -125,6 +131,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         listUsers(),
         listGastosByTravel(travelId),
         listExpenseCategories(),
+        listTravelCategories(),
       ]);
 
       setTravel(travelResponse ?? null);
@@ -133,6 +140,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       setUsers(usersResponse ?? []);
       setGastos(gastosResponse ?? []);
       setExpenseCategories(expenseCategoriesResponse ?? []);
+      setTravelCategories(travelCategoriesResponse ?? []);
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -144,20 +152,38 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     refreshAll();
   }, [travelId]);
 
+  async function reloadTravelCategories() {
+    const response = await listTravelCategories();
+    setTravelCategories(response ?? []);
+  }
+
   useEffect(() => {
     setTripNameDraft(travel?.nombre ?? "");
+    setTripCategoryDraft(travel?.id_categoria ? String(travel.id_categoria) : "");
   }, [travel]);
 
-  async function handleSaveTripName(event) {
+  async function handleSaveTrip(event) {
     event.preventDefault();
     setTripNameError("");
+    setTripCategoryError("");
     const name = tripNameDraft.trim();
+    const categoryId = Number(tripCategoryDraft);
+
+    let hasError = false;
     if (!name) {
       setTripNameError("Ingresa un nombre de viaje.");
+      hasError = true;
+    }
+    if (!categoryId) {
+      setTripCategoryError("Selecciona una categoria.");
+      hasError = true;
+    }
+    if (hasError) {
       return;
     }
+
     try {
-      await updateTravel(travelId, { nombre: name });
+      await updateTravel(travelId, { nombre: name, id_categoria: categoryId });
       setIsEditTripOpen(false);
       await refreshAll();
     } catch (error) {
@@ -213,7 +239,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             {isAdmin ? (
               <>
                 <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(true)}>
-                  Editar nombre
+                  Editar viaje
                 </button>
               </>
             ) : null}
@@ -366,7 +392,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       />
 
       <Modal
-        description="Actualiza el nombre del viaje."
+        description="Actualiza el nombre y la categoria del viaje."
         isOpen={isEditTripOpen}
         onClose={() => setIsEditTripOpen(false)}
         title="Editar viaje"
@@ -381,15 +407,48 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           </>
         }
       >
-        <form className="modal-form" id="edit-trip-form" onSubmit={handleSaveTripName} noValidate>
+        <form className="modal-form" id="edit-trip-form" onSubmit={handleSaveTrip} noValidate>
           <TextInput
             autoFocus
             error={tripNameError}
             id="edit-trip-name"
-            label="Nombre del viaje"
+            label="Asunto del viaje"
             onChange={(event) => setTripNameDraft(event.target.value)}
             value={tripNameDraft}
           />
+          <div className="field">
+            <label htmlFor="edit-trip-category">Categoría del viaje</label>
+            <div className="category-picker-row">
+              <select
+                aria-describedby={tripCategoryError ? "edit-trip-category-error" : undefined}
+                aria-invalid={tripCategoryError ? "true" : "false"}
+                id="edit-trip-category"
+                name="edit-trip-category"
+                onChange={(event) => setTripCategoryDraft(event.target.value)}
+                value={tripCategoryDraft}
+              >
+                <option value="">Selecciona una categoria</option>
+                {travelCategories.map((category) => (
+                  <option key={category.id_categoria} value={category.id_categoria}>
+                    {category.nombre_categoria}
+                  </option>
+                ))}
+              </select>
+              <button
+                aria-haspopup="dialog"
+                className="primary-button"
+                type="button"
+                onClick={() => setIsTravelCategoriesOpen(true)}
+              >
+                Agregar
+              </button>
+            </div>
+            {tripCategoryError ? (
+              <p className="field-error" id="edit-trip-category-error" role="alert">
+                {tripCategoryError}
+              </p>
+            ) : null}
+          </div>
         </form>
       </Modal>
 
@@ -420,6 +479,18 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           </p>
         </div>
       </Modal>
+
+      <ManageTravelCategoriesModal
+        isOpen={isTravelCategoriesOpen}
+        onClose={() => setIsTravelCategoriesOpen(false)}
+        onChanged={async () => {
+          try {
+            await reloadTravelCategories();
+          } catch (error) {
+            setTripCategoryError(error.message);
+          }
+        }}
+      />
     </main>
   );
 }

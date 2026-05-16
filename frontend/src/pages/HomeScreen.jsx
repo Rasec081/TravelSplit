@@ -4,6 +4,7 @@ import { DashboardHeader } from "../components/DashboardHeader";
 import { CreateTripModal } from "../components/modals/CreateTripModal";
 import { ManageTravelCategoriesModal } from "../components/modals/ManageTravelCategoriesModal";
 import { views } from "../routes/views";
+import { listTravelCategories } from "../services/categoriesService";
 import { listTravels } from "../services/travelService";
 import { listUsersByTravel } from "../services/userTravelService";
 
@@ -11,6 +12,7 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [travels, setTravels] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [participantCounts, setParticipantCounts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -21,15 +23,22 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
     }
     return map;
   }, [travels]);
+  const categoryById = useMemo(() => {
+    return new Map((categories ?? []).map((category) => [category.id_categoria, category]));
+  }, [categories]);
 
   async function refreshTravels() {
     setIsLoading(true);
     setLoadError("");
 
     try {
-      const response = await listTravels();
+      const [response, categoryResponse] = await Promise.all([
+        listTravels(),
+        listTravelCategories(),
+      ]);
       const nextTravels = response ?? [];
       setTravels(nextTravels);
+      setCategories(categoryResponse ?? []);
 
       const counts = await Promise.all(
         nextTravels.map(async (travel) => {
@@ -127,7 +136,7 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               >
                 <div>
                   <h3>{travel.nombre}</h3>
-                  <p>Gestion colaborativa de gastos</p>
+                  <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoria"}</p>
                 </div>
                 <span>{participantCounts[travel.id_travel] ?? 0}</span>
                 <span className="status-badge">{statusByTravelId[travel.id_travel] ?? "Activo"}</span>
@@ -147,7 +156,7 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
       <ManageTravelCategoriesModal
         isOpen={isCategoriesOpen}
         onClose={() => setIsCategoriesOpen(false)}
-        onChanged={() => {}}
+        onChanged={() => refreshTravels()}
       />
     </main>
   );
