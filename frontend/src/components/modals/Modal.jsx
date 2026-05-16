@@ -125,7 +125,7 @@ export function Modal({
           ) : null}
         </header>
 
-        {children}
+        <div className="modal-body">{children}</div>
 
         {footer ? (
           <div className={`modal-actions ${footerCount === 1 ? "single-action" : ""}`}>

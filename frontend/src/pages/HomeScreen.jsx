@@ -14,12 +14,13 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
   const [participantCounts, setParticipantCounts] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
-
-  const totalParticipants = useMemo(
-    () =>
-      Object.values(participantCounts).reduce((total, count) => total + (Number(count) || 0), 0),
-    [participantCounts],
-  );
+  const statusByTravelId = useMemo(() => {
+    const map = {};
+    for (const travel of travels) {
+      map[travel.id_travel] = travel?.fecha_cierre ? "Finalizado" : "Activo";
+    }
+    return map;
+  }, [travels]);
 
   async function refreshTravels() {
     setIsLoading(true);
@@ -53,11 +54,6 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
     refreshTravels();
   }, []);
 
-  function getStatus(travel) {
-    if (travel?.fecha_cierre) return "Cerrado";
-    return "Activo";
-  }
-
   return (
     <main className="home-page" aria-labelledby="home-title">
       <DashboardHeader
@@ -77,31 +73,12 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               ordenada.
             </p>
           </div>
-          <button
-            className="create-trip-button"
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <span aria-hidden="true">+</span>
-            Crear viaje
-          </button>
-          <button className="secondary-button" type="button" onClick={() => setIsCategoriesOpen(true)}>
-            Administrar categorias
-          </button>
         </div>
 
         <div className="metric-grid" aria-label="Resumen de viajes">
           <article className="metric-card">
             <span>Viajes registrados</span>
             <strong>{travels.length}</strong>
-          </article>
-          <article className="metric-card">
-            <span>Participantes</span>
-            <strong>{totalParticipants}</strong>
-          </article>
-          <article className="metric-card">
-            <span>Estados activos</span>
-            <strong>{travels.filter((travel) => !travel.fecha_cierre).length}</strong>
           </article>
         </div>
 
@@ -111,6 +88,15 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               <h2>Mis viajes</h2>
               <p>Listado de viajes disponibles para seguimiento y colaboracion.</p>
             </div>
+            <div className="panel-header-actions" aria-label="Acciones de viajes">
+              <button className="secondary-button" type="button" onClick={() => setIsCategoriesOpen(true)}>
+                Administrar categorias
+              </button>
+              <button className="create-trip-button" type="button" onClick={() => setIsModalOpen(true)}>
+                <span aria-hidden="true">+</span>
+                Crear viaje
+              </button>
+            </div>
           </div>
 
           <div className="trip-table" aria-label="Lista de viajes">
@@ -118,7 +104,6 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
               <span>Viaje</span>
               <span>Participantes</span>
               <span>Estado</span>
-              <span>Accion</span>
             </div>
             {isLoading ? (
               <p className="hint-text" role="status" aria-live="polite">
@@ -138,17 +123,14 @@ export function HomeScreen({ currentUser, goTo, onLogout }) {
                 className="trip-table-row trip-row-button"
                 type="button"
                 onClick={() => goTo(views.travel, { travelId: travel.id_travel })}
-                aria-label={`Abrir viaje ${travel.nombre}`}
+                aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${statusByTravelId[travel.id_travel] ?? "Activo"}. Presione Enter para abrir.`}
               >
                 <div>
                   <h3>{travel.nombre}</h3>
                   <p>Gestion colaborativa de gastos</p>
                 </div>
                 <span>{participantCounts[travel.id_travel] ?? 0}</span>
-                <span className="status-badge">{getStatus(travel)}</span>
-                <span className="trip-row-cta" aria-hidden="true">
-                  Ver detalles
-                </span>
+                <span className="status-badge">{statusByTravelId[travel.id_travel] ?? "Activo"}</span>
               </button>
             ))}
           </div>

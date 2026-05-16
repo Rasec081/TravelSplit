@@ -310,7 +310,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
               <div className={`participant-row-head ${isAdmin ? "" : "no-actions"}`} role="row">
                 <span role="columnheader">Usuario</span>
                 <span role="columnheader">Balance</span>
-                {isAdmin ? <span role="columnheader">Accion</span> : null}
+                {isAdmin ? <span role="columnheader">Administrar participante</span> : null}
               </div>
 
               {participantRows.map((row) => (

@@ -44,6 +44,7 @@ export function AddExpenseModal({
   const statusId = useId();
   const [statusMessage, setStatusMessage] = useState("");
   const [errors, setErrors] = useState({});
+  const [step, setStep] = useState(1); // 1 datos, 2 participantes, 3 division, 4 resumen
 
   const [descripcion, setDescripcion] = useState("");
   const [monto, setMonto] = useState("");
@@ -71,6 +72,7 @@ export function AddExpenseModal({
     if (!isOpen) return;
     setStatusMessage("");
     setErrors({});
+    setStep(1);
     setDescripcion("");
     setMonto("");
     setCategoriaId("");
@@ -114,7 +116,7 @@ export function AddExpenseModal({
     }));
   }
 
-  function validate() {
+  function getErrors() {
     const nextErrors = {};
 
     if (!descripcion.trim()) nextErrors.descripcion = "Ingresa el nombre o descripcion del gasto.";
@@ -136,7 +138,9 @@ export function AddExpenseModal({
         if (sharesMode === "percent") {
           const sum = selected.reduce((acc, id) => acc + Number(shares[id] ?? 0), 0);
           if (sum !== 100) nextErrors.division = "La suma de porcentajes debe ser exactamente 100%.";
-          if (selected.some((id) => Number(shares[id] ?? 0) < 0)) nextErrors.division = "No se permiten porcentajes negativos.";
+          if (selected.some((id) => Number(shares[id] ?? 0) < 0)) {
+            nextErrors.division = "No se permiten porcentajes negativos.";
+          }
         } else {
           const parts = selected.map((id) => Number(shares[id] ?? 0));
           if (parts.some((v) => v < 0)) nextErrors.division = "No se permiten partes negativas.";
@@ -153,8 +157,7 @@ export function AddExpenseModal({
       }
     }
 
-    setErrors(nextErrors);
-    return { ok: Object.keys(nextErrors).length === 0 };
+    return nextErrors;
   }
 
   function computeParticipantsPayload(totalCents) {
@@ -210,12 +213,47 @@ export function AddExpenseModal({
       .map((row) => ({ id_usuario: row.id_usuario, monto: centsToFixed(row.cents) }));
   }
 
+  function validateStep(nextStep) {
+    const all = getErrors();
+    const allowed =
+      nextStep === 1
+        ? ["descripcion", "monto", "categoriaId", "pagadorId"]
+        : nextStep === 2
+          ? ["participants"]
+          : nextStep === 3
+            ? ["division"]
+            : ["descripcion", "monto", "categoriaId", "pagadorId", "participants", "division"];
+
+    const filtered = Object.fromEntries(
+      Object.entries(all).filter(([key]) => allowed.includes(key)),
+    );
+    setErrors(filtered);
+    return Object.keys(filtered).length === 0;
+  }
+
+  function goNext() {
+    const next = Math.min(4, step + 1);
+    if (step === 1 && !validateStep(1)) return;
+    if (step === 2 && !validateStep(2)) return;
+    if (step === 3 && !validateStep(3)) return;
+    setStep(next);
+  }
+
+  function goBack() {
+    setErrors({});
+    setStep((current) => Math.max(1, current - 1));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setStatusMessage("");
 
-    const { ok } = validate();
-    if (!ok) return;
+    const all = getErrors();
+    if (Object.keys(all).length > 0) {
+      setErrors(all);
+      setStep(1);
+      return;
+    }
 
     const totalCents = parseAmountToCents(monto);
     if (totalCents === null) return;
@@ -267,6 +305,32 @@ export function AddExpenseModal({
       ? "Asigna porcentajes o partes. El total debe representar 100% del gasto."
       : "Asigna montos manualmente. La suma debe ser igual al monto total.";
 
+  const preview = useMemo(() => {
+    const totalCents = parseAmountToCents(monto);
+    if (totalCents === null || totalCents <= 0) return [];
+    const selected = selectedParticipantIds.map(Number).filter(Boolean);
+    if (selected.length === 0) return [];
+    try {
+      const list = computeParticipantsPayload(totalCents);
+      const map = new Map(list.map((row) => [row.id_usuario, row.monto]));
+      return selected.map((id_usuario) => ({
+        id_usuario,
+        nombre: participantById.get(id_usuario)?.nombre ?? `Usuario ${id_usuario}`,
+        monto: map.get(id_usuario) ?? "0.00",
+      }));
+    } catch {
+      return [];
+    }
+  }, [
+    monto,
+    selectedParticipantIds,
+    divisionType,
+    sharesMode,
+    shares,
+    customAmounts,
+    participantById,
+  ]);
+
   return (
     <>
       <Modal
@@ -280,9 +344,20 @@ export function AddExpenseModal({
             <button className="secondary-button" type="button" onClick={onClose} disabled={isSaving}>
               Cancelar
             </button>
-            <button className="create-trip-button" type="submit" form="add-expense-form" disabled={isSaving}>
-              {isSaving ? "Guardando..." : "Guardar gasto"}
-            </button>
+            {step > 1 ? (
+              <button className="secondary-button" type="button" onClick={goBack} disabled={isSaving}>
+                Atras
+              </button>
+            ) : null}
+            {step < 4 ? (
+              <button className="create-trip-button" type="button" onClick={goNext} disabled={isSaving}>
+                Siguiente
+              </button>
+            ) : (
+              <button className="create-trip-button" type="submit" form="add-expense-form" disabled={isSaving}>
+                {isSaving ? "Guardando..." : "Guardar gasto"}
+              </button>
+            )}
           </>
         }
       >
@@ -297,227 +372,268 @@ export function AddExpenseModal({
             </p>
           ) : null}
 
-          <TextInput
-            autoFocus
-            error={errors.descripcion}
-            id="expense-desc"
-            label="Nombre o descripcion"
-            onChange={(event) => setDescripcion(event.target.value)}
-            placeholder="Ej: Cena grupal"
-            value={descripcion}
-          />
+          <ol className="stepper" aria-label="Progreso">
+            <li className={step === 1 ? "active" : ""} aria-current={step === 1 ? "step" : undefined}>
+              Datos
+            </li>
+            <li className={step === 2 ? "active" : ""} aria-current={step === 2 ? "step" : undefined}>
+              Participantes
+            </li>
+            <li className={step === 3 ? "active" : ""} aria-current={step === 3 ? "step" : undefined}>
+              Division
+            </li>
+            <li className={step === 4 ? "active" : ""} aria-current={step === 4 ? "step" : undefined}>
+              Resumen
+            </li>
+          </ol>
 
-          <TextInput
-            error={errors.monto}
-            id="expense-total"
-            label="Monto total"
-            inputMode="decimal"
-            onChange={(event) => setMonto(event.target.value)}
-            placeholder="Ej: 45000"
-            value={monto}
-          />
+          {step === 1 ? (
+            <>
+              <TextInput
+                autoFocus
+                error={errors.descripcion}
+                id="expense-desc"
+                label="Nombre o descripcion"
+                onChange={(event) => setDescripcion(event.target.value)}
+                placeholder="Ej: Cena grupal"
+                value={descripcion}
+              />
 
-          <div className="field">
-            <div className="field-label-row">
-              <label htmlFor="expense-category">Categoria</label>
-              <button
-                className="link-button"
-                type="button"
-                aria-haspopup="dialog"
-                onClick={() => setIsManageCategoriesOpen(true)}
-                disabled={isSaving}
-              >
-                Gestionar categorias
-              </button>
-            </div>
-            <select
-              id="expense-category"
-              name="expense-category"
-              value={categoriaId}
-              onChange={(event) => setCategoriaId(event.target.value)}
-              aria-describedby={errors.categoriaId ? "expense-category-error" : undefined}
-              aria-invalid={errors.categoriaId ? "true" : "false"}
-            >
-              <option value="">Seleccione opcion</option>
-              {categories.map((cat) => (
-                <option key={cat.id_categoria} value={cat.id_categoria}>
-                  {cat.nombre_categoria}
-                </option>
-              ))}
-            </select>
-            {errors.categoriaId ? (
-              <p className="field-error" id="expense-category-error" role="alert">
-                {errors.categoriaId}
-              </p>
-            ) : null}
-          </div>
+              <TextInput
+                error={errors.monto}
+                id="expense-total"
+                label="Monto total"
+                inputMode="decimal"
+                onChange={(event) => setMonto(event.target.value)}
+                placeholder="Ej: 45000"
+                value={monto}
+              />
 
-          <fieldset className="modal-fieldset">
-            <legend>Participantes incluidos</legend>
-            {errors.participants ? (
-              <p className="field-error" role="alert">
-                {errors.participants}
-              </p>
-            ) : null}
-            <div className="checkbox-grid" role="group" aria-label="Participantes del gasto">
-              {participants.map((p) => (
-                <label key={p.id_usuario} className="checkbox-row">
+              <div className="field">
+                <div className="field-label-row">
+                  <label htmlFor="expense-category">Categoria</label>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    aria-haspopup="dialog"
+                    onClick={() => setIsManageCategoriesOpen(true)}
+                    disabled={isSaving}
+                  >
+                    Agregar categorias
+                  </button>
+                </div>
+                <select
+                  id="expense-category"
+                  name="expense-category"
+                  value={categoriaId}
+                  onChange={(event) => setCategoriaId(event.target.value)}
+                  aria-describedby={errors.categoriaId ? "expense-category-error" : undefined}
+                  aria-invalid={errors.categoriaId ? "true" : "false"}
+                >
+                  <option value="">Seleccione opcion</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id_categoria} value={cat.id_categoria}>
+                      {cat.nombre_categoria}
+                    </option>
+                  ))}
+                </select>
+                {errors.categoriaId ? (
+                  <p className="field-error" id="expense-category-error" role="alert">
+                    {errors.categoriaId}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="field">
+                <label htmlFor="expense-payer">Quien pago</label>
+                <select
+                  id="expense-payer"
+                  name="expense-payer"
+                  value={pagadorId}
+                  onChange={(event) => setPagadorId(event.target.value)}
+                  aria-describedby={errors.pagadorId ? "expense-payer-error" : undefined}
+                  aria-invalid={errors.pagadorId ? "true" : "false"}
+                >
+                  {participants.map((p) => (
+                    <option key={p.id_usuario} value={p.id_usuario}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
+                {errors.pagadorId ? (
+                  <p className="field-error" id="expense-payer-error" role="alert">
+                    {errors.pagadorId}
+                  </p>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
+          {step === 2 ? (
+            <fieldset className="modal-fieldset">
+              <legend>Participantes incluidos</legend>
+              {errors.participants ? (
+                <p className="field-error" role="alert">
+                  {errors.participants}
+                </p>
+              ) : null}
+              <div className="checkbox-grid" role="group" aria-label="Participantes del gasto">
+                {participants.map((p) => (
+                  <label key={p.id_usuario} className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={selectedParticipantIds.includes(p.id_usuario)}
+                      onChange={() => toggleParticipant(p.id_usuario)}
+                    />
+                    <span>
+                      <strong>{p.nombre}</strong>
+                      {p.correo ? <span className="muted"> · {p.correo}</span> : null}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
+          {step === 3 ? (
+            <fieldset className="modal-fieldset">
+              <legend>Division</legend>
+              <p className="hint-text">{divisionHelp}</p>
+              {errors.division ? (
+                <p className="field-error" role="alert">
+                  {errors.division}
+                </p>
+              ) : null}
+
+              <div className="radio-grid" role="radiogroup" aria-label="Tipo de division">
+                <label className="radio-row">
                   <input
-                    type="checkbox"
-                    checked={selectedParticipantIds.includes(p.id_usuario)}
-                    onChange={() => toggleParticipant(p.id_usuario)}
+                    type="radio"
+                    name="division-type"
+                    value="equal"
+                    checked={divisionType === "equal"}
+                    onChange={() => setDivisionType("equal")}
                   />
-                  <span>
-                    <strong>{p.nombre}</strong>
-                    {p.correo ? <span className="muted"> · {p.correo}</span> : null}
-                  </span>
+                  <span>Division igualitaria</span>
                 </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className="field">
-            <label htmlFor="expense-payer">Quien pago</label>
-            <select
-              id="expense-payer"
-              name="expense-payer"
-              value={pagadorId}
-              onChange={(event) => setPagadorId(event.target.value)}
-              aria-describedby={errors.pagadorId ? "expense-payer-error" : undefined}
-              aria-invalid={errors.pagadorId ? "true" : "false"}
-            >
-              {participants.map((p) => (
-                <option key={p.id_usuario} value={p.id_usuario}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
-            {errors.pagadorId ? (
-              <p className="field-error" id="expense-payer-error" role="alert">
-                {errors.pagadorId}
-              </p>
-            ) : null}
-          </div>
-
-          <fieldset className="modal-fieldset">
-            <legend>Tipo de division</legend>
-            <p className="hint-text">{divisionHelp}</p>
-            {errors.division ? (
-              <p className="field-error" role="alert">
-                {errors.division}
-              </p>
-            ) : null}
-
-            <div className="radio-grid" role="radiogroup" aria-label="Tipo de division">
-              <label className="radio-row">
-                <input
-                  type="radio"
-                  name="division-type"
-                  value="equal"
-                  checked={divisionType === "equal"}
-                  onChange={() => setDivisionType("equal")}
-                />
-                <span>Division igualitaria</span>
-              </label>
-              <label className="radio-row">
-                <input
-                  type="radio"
-                  name="division-type"
-                  value="shares"
-                  checked={divisionType === "shares"}
-                  onChange={() => setDivisionType("shares")}
-                />
-                <span>Division por partes o porcentajes</span>
-              </label>
-              <label className="radio-row">
-                <input
-                  type="radio"
-                  name="division-type"
-                  value="custom"
-                  checked={divisionType === "custom"}
-                  onChange={() => setDivisionType("custom")}
-                />
-                <span>Division personalizada</span>
-              </label>
-            </div>
-
-            {divisionType === "shares" ? (
-              <div className="division-editor" aria-label="Asignacion por partes o porcentajes">
-                <fieldset className="inline-fieldset">
-                  <legend className="sr-only">Modo</legend>
-                  <label className="radio-row">
-                    <input
-                      type="radio"
-                      name="shares-mode"
-                      value="percent"
-                      checked={sharesMode === "percent"}
-                      onChange={() => setSharesMode("percent")}
-                    />
-                    <span>Porcentaje</span>
-                  </label>
-                  <label className="radio-row">
-                    <input
-                      type="radio"
-                      name="shares-mode"
-                      value="parts"
-                      checked={sharesMode === "parts"}
-                      onChange={() => setSharesMode("parts")}
-                    />
-                    <span>Partes</span>
-                  </label>
-                </fieldset>
-
-                <div className="division-grid" role="group" aria-label="Asignacion">
-                  {selectedParticipantIds.map((id) => {
-                    const p = participantById.get(id);
-                    return (
-                      <div key={id} className="division-row">
-                        <span>{p?.nombre ?? `Usuario ${id}`}</span>
-                        <input
-                          inputMode="decimal"
-                          type="number"
-                          min="0"
-                          step={sharesMode === "percent" ? "1" : "1"}
-                          value={shares[id] ?? ""}
-                          onChange={(event) => setShareValue(id, event.target.value)}
-                          aria-label={
-                            sharesMode === "percent"
-                              ? `Porcentaje para ${p?.nombre ?? id}`
-                              : `Partes para ${p?.nombre ?? id}`
-                          }
-                        />
-                        <span className="muted">{sharesMode === "percent" ? "%" : "partes"}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <label className="radio-row">
+                  <input
+                    type="radio"
+                    name="division-type"
+                    value="shares"
+                    checked={divisionType === "shares"}
+                    onChange={() => setDivisionType("shares")}
+                  />
+                  <span>Division por partes o porcentajes</span>
+                </label>
+                <label className="radio-row">
+                  <input
+                    type="radio"
+                    name="division-type"
+                    value="custom"
+                    checked={divisionType === "custom"}
+                    onChange={() => setDivisionType("custom")}
+                  />
+                  <span>Division personalizada</span>
+                </label>
               </div>
-            ) : null}
 
-            {divisionType === "custom" ? (
-              <div className="division-editor" aria-label="Asignacion personalizada">
-                <div className="division-grid" role="group" aria-label="Montos por participante">
-                  {selectedParticipantIds.map((id) => {
-                    const p = participantById.get(id);
-                    return (
-                      <div key={id} className="division-row">
-                        <span>{p?.nombre ?? `Usuario ${id}`}</span>
-                        <input
-                          inputMode="decimal"
-                          type="text"
-                          value={customAmounts[id] ?? ""}
-                          onChange={(event) => setCustomAmountValue(id, event.target.value)}
-                          aria-label={`Monto para ${p?.nombre ?? id}`}
-                        />
-                        <span className="muted">CRC</span>
-                      </div>
-                    );
-                  })}
+              {divisionType === "shares" ? (
+                <div className="division-editor" aria-label="Asignacion por partes o porcentajes">
+                  <fieldset className="inline-fieldset">
+                    <legend>Modo</legend>
+                    <label className="radio-row">
+                      <input
+                        type="radio"
+                        name="shares-mode"
+                        value="percent"
+                        checked={sharesMode === "percent"}
+                        onChange={() => setSharesMode("percent")}
+                      />
+                      <span>Porcentaje</span>
+                    </label>
+                    <label className="radio-row">
+                      <input
+                        type="radio"
+                        name="shares-mode"
+                        value="parts"
+                        checked={sharesMode === "parts"}
+                        onChange={() => setSharesMode("parts")}
+                      />
+                      <span>Partes</span>
+                    </label>
+                  </fieldset>
+
+                  <div className="division-grid" role="group" aria-label="Asignacion">
+                    {selectedParticipantIds.map((id) => {
+                      const p = participantById.get(id);
+                      return (
+                        <div key={id} className="division-row">
+                          <span>{p?.nombre ?? `Usuario ${id}`}</span>
+                          <label className="sr-only" htmlFor={`shares-${id}`}>
+                            {sharesMode === "percent" ? "Porcentaje" : "Partes"} para {p?.nombre ?? id}
+                          </label>
+                          <input
+                            id={`shares-${id}`}
+                            inputMode="decimal"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={shares[id] ?? ""}
+                            onChange={(event) => setShareValue(id, event.target.value)}
+                          />
+                          <span className="muted">{sharesMode === "percent" ? "%" : "partes"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <p className="hint-text">Puedes dejar un monto en 0 para omitir a un participante.</p>
-              </div>
-            ) : null}
-          </fieldset>
+              ) : null}
+
+              {divisionType === "custom" ? (
+                <div className="division-editor" aria-label="Asignacion personalizada">
+                  <div className="division-grid" role="group" aria-label="Montos por participante">
+                    {selectedParticipantIds.map((id) => {
+                      const p = participantById.get(id);
+                      return (
+                        <div key={id} className="division-row">
+                          <span>{p?.nombre ?? `Usuario ${id}`}</span>
+                          <label className="sr-only" htmlFor={`custom-${id}`}>
+                            Monto para {p?.nombre ?? id}
+                          </label>
+                          <input
+                            id={`custom-${id}`}
+                            inputMode="decimal"
+                            type="text"
+                            value={customAmounts[id] ?? ""}
+                            onChange={(event) => setCustomAmountValue(id, event.target.value)}
+                          />
+                          <span className="muted">CRC</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="hint-text">Puedes dejar un monto en 0 para omitir a un participante.</p>
+                </div>
+              ) : null}
+            </fieldset>
+          ) : null}
+
+          {step === 4 ? (
+            <section className="summary-card" aria-label="Resumen del gasto">
+              <p className="hint-text">
+                Revisa el resumen antes de guardar. Si algo no coincide, vuelve con “Atras”.
+              </p>
+              <ul className="summary-list" aria-label="Detalle de division">
+                {preview.map((row) => (
+                  <li key={row.id_usuario} className="summary-row">
+                    <span>{row.nombre}</span>
+                    <strong>{row.monto}</strong>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </form>
       </Modal>
 
@@ -532,4 +648,3 @@ export function AddExpenseModal({
     </>
   );
 }
-
