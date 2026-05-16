@@ -20,6 +20,30 @@ function centsToFixed(cents) {
   return (Number(cents) / 100).toFixed(2);
 }
 
+function sanitizeDecimalInput(value) {
+  const raw = String(value ?? "").replace(",", ".");
+  let sanitized = "";
+  let hasDecimalSeparator = false;
+
+  for (const character of raw) {
+    if (/\d/.test(character)) {
+      sanitized += character;
+      continue;
+    }
+
+    if (character === "." && !hasDecimalSeparator) {
+      sanitized += character;
+      hasDecimalSeparator = true;
+    }
+  }
+
+  return sanitized;
+}
+
+function sanitizeIntegerInput(value) {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
 function splitCentsEvenly(totalCents, userIds) {
   const count = userIds.length;
   if (count <= 0) return [];
@@ -93,6 +117,18 @@ export function AddExpenseModal({
     }
   }, [isOpen, pagadorId, travelParticipantIds, currentUser]);
 
+  useEffect(() => {
+    if (sharesMode !== "parts") return;
+
+    setShares((current) => {
+      const sanitizedEntries = Object.entries(current).map(([id, value]) => [
+        id,
+        sanitizeIntegerInput(value),
+      ]);
+      return Object.fromEntries(sanitizedEntries);
+    });
+  }, [sharesMode]);
+
   function toggleParticipant(id) {
     setSelectedParticipantIds((current) => {
       const set = new Set(current);
@@ -103,16 +139,18 @@ export function AddExpenseModal({
   }
 
   function setShareValue(id, value) {
+    const sanitizedValue = sharesMode === "parts" ? sanitizeIntegerInput(value) : sanitizeDecimalInput(value);
+
     setShares((current) => ({
       ...current,
-      [id]: value,
+      [id]: sanitizedValue,
     }));
   }
 
   function setCustomAmountValue(id, value) {
     setCustomAmounts((current) => ({
       ...current,
-      [id]: value,
+      [id]: sanitizeDecimalInput(value),
     }));
   }
 
@@ -404,7 +442,8 @@ export function AddExpenseModal({
                 id="expense-total"
                 label="Monto total"
                 inputMode="decimal"
-                onChange={(event) => setMonto(event.target.value)}
+                onChange={(event) => setMonto(sanitizeDecimalInput(event.target.value))}
+                pattern="[0-9]*[.]?[0-9]*"
                 placeholder="Ej: 45000"
                 value={monto}
               />
@@ -576,9 +615,9 @@ export function AddExpenseModal({
                           <input
                             id={`shares-${id}`}
                             inputMode="decimal"
-                            type="number"
+                            type="text"
                             min="0"
-                            step="1"
+                            pattern={sharesMode === "percent" ? "[0-9]*[.]?[0-9]*" : "[0-9]*"}
                             value={shares[id] ?? ""}
                             onChange={(event) => setShareValue(id, event.target.value)}
                           />
@@ -604,6 +643,7 @@ export function AddExpenseModal({
                           <input
                             id={`custom-${id}`}
                             inputMode="decimal"
+                            pattern="[0-9]*[.]?[0-9]*"
                             type="text"
                             value={customAmounts[id] ?? ""}
                             onChange={(event) => setCustomAmountValue(id, event.target.value)}

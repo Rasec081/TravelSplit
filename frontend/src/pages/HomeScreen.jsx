@@ -93,7 +93,6 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
       <section className="home-content">
         <div className="dashboard-hero">
           <div>
-            <p className="eyebrow">Panel de gestión</p>
             <h1 id="home-title">Viajes y gastos compartidos</h1>
             <p>
               Supervisa tus viajes, participantes y próximas acciones desde una vista clara y

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { TextInput } from "../components/forms/TextInput";
 import { views } from "../routes/views";
@@ -23,6 +23,20 @@ export function RegisterScreen({ goTo, onLogin }) {
       [field]: value,
     }));
   }
+
+  useEffect(() => {
+    setErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+
+      if (formData.password && formData.confirmPassword && formData.confirmPassword !== formData.password) {
+        nextErrors.confirmPassword = "Las contraseñas no coinciden.";
+      } else if (nextErrors.confirmPassword === "Las contraseñas no coinciden.") {
+        delete nextErrors.confirmPassword;
+      }
+
+      return nextErrors;
+    });
+  }, [formData.password, formData.confirmPassword]);
 
   async function handleSubmit(event) {
     event.preventDefault();
