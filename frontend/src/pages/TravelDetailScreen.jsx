@@ -4,9 +4,10 @@ import { DashboardHeader } from "../components/DashboardHeader";
 import { Modal } from "../components/modals/Modal";
 import { TextInput } from "../components/forms/TextInput";
 import { AddExpenseModal } from "../components/modals/AddExpenseModal";
+import { ManageParticipantsModal } from "../components/modals/ManageParticipantsModal";
 import { views } from "../routes/views";
 import { listUsers } from "../services/userService";
-import { addUserToTravel, deleteUserTravel, listUsersByTravel } from "../services/userTravelService";
+import { listUsersByTravel } from "../services/userTravelService";
 import { getTravel, getTravelBalance, updateTravel, closeTravel } from "../services/travelService";
 import { listGastosByTravel } from "../services/gastoService";
 import { listExpenseCategories } from "../services/categoriesService";
@@ -41,9 +42,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [isAddParticipantOpen, setIsAddParticipantOpen] = useState(false);
-  const [participantEmail, setParticipantEmail] = useState("");
-  const [participantError, setParticipantError] = useState("");
+  const [isManageParticipantsOpen, setIsManageParticipantsOpen] = useState(false);
 
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
   const [tripNameDraft, setTripNameDraft] = useState("");
@@ -149,55 +148,6 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     setTripNameDraft(travel?.nombre ?? "");
   }, [travel]);
 
-  async function handleAddParticipant(event) {
-    event.preventDefault();
-    setParticipantError("");
-
-    const normalized = participantEmail.trim().toLowerCase();
-    if (!normalized) {
-      setParticipantError("Ingresa el correo del participante.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-      setParticipantError("Ingresa un correo valido.");
-      return;
-    }
-
-    const emailToUserId = new Map((users ?? []).map((user) => [String(user.correo).toLowerCase(), user.id_usuario]));
-    const userId = emailToUserId.get(normalized);
-    if (!userId) {
-      setParticipantError("No se encontro un usuario con ese correo.");
-      return;
-    }
-    if (userId === currentUser.id_usuario) {
-      setParticipantError("Ese usuario ya participa (sos vos).");
-      return;
-    }
-
-    try {
-      await addUserToTravel({ id_viaje: travelId, id_usuario: userId });
-      setParticipantEmail("");
-      setIsAddParticipantOpen(false);
-      await refreshAll();
-    } catch (error) {
-      setParticipantError(error.message);
-    }
-  }
-
-  async function handleRemoveParticipant(row) {
-    const confirmDelete = window.confirm(
-      `Eliminar a ${row.nombre} del viaje? Esta accion no se puede deshacer.`,
-    );
-    if (!confirmDelete) return;
-
-    try {
-      await deleteUserTravel(row.id_user_travel);
-      await refreshAll();
-    } catch (error) {
-      setErrorMessage(error.message);
-    }
-  }
-
   async function handleSaveTripName(event) {
     event.preventDefault();
     setTripNameError("");
@@ -291,7 +241,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           </article>
         </div>
 
-        <section className="dashboard-panel" aria-label="Participantes del viaje">
+          <section className="dashboard-panel" aria-label="Participantes del viaje">
             <div className="panel-header">
               <div>
                 <h2>Participantes</h2>
@@ -299,23 +249,26 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
               </div>
               {isAdmin ? (
                 <div className="panel-header-actions">
-                  <button className="primary-button" type="button" onClick={() => setIsAddParticipantOpen(true)}>
-                    Anadir participante
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() => setIsManageParticipantsOpen(true)}
+                  >
+                    Gestionar participantes
                   </button>
                 </div>
               ) : null}
             </div>
 
             <div className="participant-table" role="table" aria-label="Tabla de participantes">
-              <div className={`participant-row-head ${isAdmin ? "" : "no-actions"}`} role="row">
+              <div className="participant-row-head no-actions" role="row">
                 <span role="columnheader">Usuario</span>
                 <span role="columnheader">Balance</span>
-                {isAdmin ? <span role="columnheader">Administrar participante</span> : null}
               </div>
 
               {participantRows.map((row) => (
                 <div
-                  className={`participant-row-item ${isAdmin ? "" : "no-actions"}`}
+                  className="participant-row-item no-actions"
                   role="row"
                   key={row.id_usuario}
                 >
@@ -326,21 +279,6 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                   <div role="cell" className={`participant-balance ${balanceClass(row.balance_final)}`}>
                     {formatCurrency(row.balance_final)}
                   </div>
-                  {isAdmin ? (
-                    <div role="cell">
-                      {row.id_usuario === travel?.id_usuario_creador ? (
-                        <span className="muted">Admin</span>
-                      ) : (
-                        <button
-                          className="secondary-button"
-                          type="button"
-                          onClick={() => handleRemoveParticipant(row)}
-                        >
-                          Eliminar
-                        </button>
-                      )}
-                    </div>
-                  ) : null}
                 </div>
               ))}
             </div>
@@ -394,35 +332,25 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         ) : null}
       </section>
 
-      <Modal
-        description="Ingresa el correo del usuario a agregar como participante."
-        isOpen={isAddParticipantOpen}
-        onClose={() => setIsAddParticipantOpen(false)}
-        title="Anadir participante"
-        footer={
-          <>
-            <button className="secondary-button" type="button" onClick={() => setIsAddParticipantOpen(false)}>
-              Cancelar
-            </button>
-            <button className="primary-button" type="submit" form="add-participant-form">
-              Agregar
-            </button>
-          </>
-        }
-      >
-        <form className="modal-form" id="add-participant-form" onSubmit={handleAddParticipant} noValidate>
-          <TextInput
-            autoFocus
-            error={participantError}
-            id="add-participant-email"
-            label="Correo del participante"
-            onChange={(event) => setParticipantEmail(event.target.value)}
-            placeholder="participante@correo.com"
-            type="email"
-            value={participantEmail}
-          />
-        </form>
-      </Modal>
+      <ManageParticipantsModal
+        isOpen={isManageParticipantsOpen}
+        onClose={() => setIsManageParticipantsOpen(false)}
+        travelId={travelId}
+        currentUser={currentUser}
+        participants={participantRows.map((p) => ({
+          id_user_travel: p.id_user_travel,
+          id_usuario: p.id_usuario,
+          nombre: p.nombre,
+          correo: p.correo,
+          rol: p.rol,
+        }))}
+        balancesByUserId={balanceByUserId}
+        adminUserId={travel?.id_usuario_creador}
+        allUsers={users}
+        onChanged={async () => {
+          await refreshAll();
+        }}
+      />
 
       <AddExpenseModal
         isOpen={isAddGastoOpen}

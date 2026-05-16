@@ -18,3 +18,10 @@ export function deleteUserTravel(userTravelId) {
     method: "DELETE",
   });
 }
+
+export function updateUserTravel(userTravelId, payload) {
+  return request(`/user-travels/${userTravelId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
