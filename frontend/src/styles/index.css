@@ -962,6 +962,57 @@ button:disabled {
   font-size: 13px;
 }
 
+.trip-filter-bar {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin: 14px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  background: var(--surface-muted);
+}
+
+.trip-filter-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 12px;
+  color: var(--text-muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.trip-filter-bar button:hover,
+.trip-filter-bar button.active {
+  color: var(--primary-dark);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.trip-filter-bar span {
+  min-width: 22px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: var(--text-muted);
+  background: #e8eff0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.trip-filter-bar button.active span {
+  color: var(--primary-dark);
+  background: var(--success-soft);
+}
+
+.empty-trips-message {
+  padding: 18px 24px;
+}
+
 .trip-table {
   display: grid;
 }

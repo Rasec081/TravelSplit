@@ -15,6 +15,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
   const [categories, setCategories] = useState([]);
   const [participantCounts, setParticipantCounts] = useState({});
   const [toastMessage, setToastMessage] = useState("");
+  const [travelStatusFilter, setTravelStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
   const statusByTravelId = useMemo(() => {
@@ -27,6 +28,29 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
   const categoryById = useMemo(() => {
     return new Map((categories ?? []).map((category) => [category.id_categoria, category]));
   }, [categories]);
+  const travelStatusCounts = useMemo(() => {
+    return travels.reduce(
+      (counts, travel) => {
+        if (isTravelClosed(travel)) {
+          return { ...counts, closed: counts.closed + 1 };
+        }
+
+        return { ...counts, active: counts.active + 1 };
+      },
+      { all: travels.length, active: 0, closed: 0 },
+    );
+  }, [travels]);
+  const filteredTravels = useMemo(() => {
+    if (travelStatusFilter === "closed") {
+      return travels.filter((travel) => isTravelClosed(travel));
+    }
+
+    if (travelStatusFilter === "active") {
+      return travels.filter((travel) => !isTravelClosed(travel));
+    }
+
+    return travels;
+  }, [travels, travelStatusFilter]);
 
   async function refreshTravels() {
     setIsLoading(true);
@@ -125,6 +149,33 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
             </div>
           </div>
 
+          <div className="trip-filter-bar" aria-label="Filtrar viajes por estado">
+            <button
+              className={travelStatusFilter === "all" ? "active" : ""}
+              type="button"
+              onClick={() => setTravelStatusFilter("all")}
+            >
+              Todos
+              <span>{travelStatusCounts.all}</span>
+            </button>
+            <button
+              className={travelStatusFilter === "active" ? "active" : ""}
+              type="button"
+              onClick={() => setTravelStatusFilter("active")}
+            >
+              Iniciados
+              <span>{travelStatusCounts.active}</span>
+            </button>
+            <button
+              className={travelStatusFilter === "closed" ? "active" : ""}
+              type="button"
+              onClick={() => setTravelStatusFilter("closed")}
+            >
+              Finalizados
+              <span>{travelStatusCounts.closed}</span>
+            </button>
+          </div>
+
           <div className="trip-table" aria-label="Lista de viajes">
             <div className="trip-table-row trip-table-head">
               <span>Viaje</span>
@@ -143,7 +194,13 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
               </p>
             ) : null}
 
-            {travels.map((travel) => {
+            {!isLoading && !loadError && filteredTravels.length === 0 ? (
+              <p className="hint-text empty-trips-message">
+                No hay viajes para el filtro seleccionado.
+              </p>
+            ) : null}
+
+            {filteredTravels.map((travel) => {
               const isClosed = isTravelClosed(travel);
               const status = statusByTravelId[travel.id_travel] ?? "Iniciado";
 
