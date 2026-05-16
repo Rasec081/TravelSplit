@@ -5,6 +5,7 @@ from app.database.connection import Base, engine
 from app.database.models.categorias_model import Categoria  # noqa: F401
 from app.database.models.div_gasto import DivisionGasto, DivisionGastoParticipante  # noqa: F401
 from app.database.models.gasto_model import Gasto  # noqa: F401
+from app.database.models.payment_model import Payment  # noqa: F401
 from app.database.models.password_reset_model import PasswordResetToken  # noqa: F401
 from app.database.models.travel_model import Travel, UserTravel  # noqa: F401
 from app.database.models.user_model import User  # noqa: F401
@@ -12,4 +13,3 @@ from app.database.models.user_model import User  # noqa: F401
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
-

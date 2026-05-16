@@ -44,6 +44,19 @@ export function getTravelBalance(travelId) {
   });
 }
 
+export function getTravelSettlements(travelId, userId) {
+  return request(`/travels/${travelId}/settlements/${userId}`, {
+    method: "GET",
+  });
+}
+
+export function createTravelPayment(travelId, payload) {
+  return request(`/travels/${travelId}/payments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function closeTravel(travelId) {
   return request(`/travels/${travelId}/close`, {
     method: "PUT",

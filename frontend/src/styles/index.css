@@ -1329,6 +1329,55 @@ button:disabled {
   padding-top: 12px;
 }
 
+.settlement-panel {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 14px;
+}
+
+.settlement-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.settlement-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.settlement-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.settlement-amount {
+  font-weight: 800;
+}
+
+.settlement-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.settlement-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .modal-actions.single-action {
   grid-template-columns: 1fr;
 }

@@ -179,6 +179,41 @@ CREATE TABLE division_gastos_participantes (
 );
 
 -- =========================================
+-- TABLA: pagos (liquidaciones entre usuarios)
+-- =========================================
+
+CREATE TABLE pagos (
+    id_pago SERIAL PRIMARY KEY,
+    id_viaje INT NOT NULL,
+    id_usuario_from INT NOT NULL,
+    id_usuario_to INT NOT NULL,
+    monto NUMERIC(10,2) NOT NULL,
+    fecha_creacion TIMESTAMP NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_pagos_viaje
+        FOREIGN KEY (id_viaje)
+        REFERENCES viajes(id_viaje)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_pagos_usuario_from
+        FOREIGN KEY (id_usuario_from)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_pagos_usuario_to
+        FOREIGN KEY (id_usuario_to)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_monto_pago
+        CHECK (monto > 0),
+
+    CONSTRAINT chk_pagos_distintos
+        CHECK (id_usuario_from <> id_usuario_to)
+);
+
+-- =========================================
 -- ÍNDICES 
 -- =========================================
 
@@ -196,6 +231,15 @@ ON division_gastos_participantes(id_division);
 
 CREATE INDEX idx_div_part_usuario
 ON division_gastos_participantes(id_usuario);
+
+CREATE INDEX idx_pagos_viaje
+ON pagos(id_viaje);
+
+CREATE INDEX idx_pagos_from
+ON pagos(id_usuario_from);
+
+CREATE INDEX idx_pagos_to
+ON pagos(id_usuario_to);
 
 CREATE INDEX idx_usuarios_viajes_viaje
 ON usuarios_viajes(id_viaje);
