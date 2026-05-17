@@ -288,6 +288,7 @@ export function ManageExpenseCategoriesModal({ currentUser, isOpen, onClose, onC
             label="Agregar categoría"
             onChange={(event) => setNewCategoryName(event.target.value)}
             placeholder="Ej: Transporte"
+            required
             value={newCategoryName}
           />
           <div className="modal-actions-inline">

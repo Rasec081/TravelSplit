@@ -100,7 +100,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
   }, [flashMessage]);
 
   return (
-    <main className="home-page" aria-labelledby="home-title">
+    <main className="home-page" id="contenido-principal" tabIndex={-1} aria-labelledby="home-title">
       {toastMessage ? (
         <div className="toast-message" role="status" aria-live="polite">
           {toastMessage}
@@ -149,10 +149,11 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
             </div>
           </div>
 
-          <div className="trip-filter-bar" aria-label="Filtrar viajes por estado">
+          <div className="trip-filter-bar" role="group" aria-label="Filtrar viajes por estado">
             <button
               className={travelStatusFilter === "all" ? "active" : ""}
               type="button"
+              aria-pressed={travelStatusFilter === "all"}
               onClick={() => setTravelStatusFilter("all")}
             >
               Todos
@@ -161,6 +162,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
             <button
               className={travelStatusFilter === "active" ? "active" : ""}
               type="button"
+              aria-pressed={travelStatusFilter === "active"}
               onClick={() => setTravelStatusFilter("active")}
             >
               Iniciados
@@ -169,6 +171,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
             <button
               className={travelStatusFilter === "closed" ? "active" : ""}
               type="button"
+              aria-pressed={travelStatusFilter === "closed"}
               onClick={() => setTravelStatusFilter("closed")}
             >
               Finalizados
@@ -176,7 +179,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
             </button>
           </div>
 
-          <div className="trip-table" aria-label="Lista de viajes">
+          <section className="trip-table" aria-label="Lista de viajes" aria-busy={isLoading ? "true" : "false"}>
             <div className="trip-table-row trip-table-head">
               <span>Viaje</span>
               <span>Participantes</span>
@@ -223,7 +226,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
                 </button>
               );
             })}
-          </div>
+          </section>
         </div>
       </section>
 

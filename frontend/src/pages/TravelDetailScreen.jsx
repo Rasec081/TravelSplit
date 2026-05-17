@@ -85,6 +85,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const [isFinalizeOpen, setIsFinalizeOpen] = useState(false);
   const [finalizeError, setFinalizeError] = useState("");
   const [isAddGastoOpen, setIsAddGastoOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const [settlements, setSettlements] = useState([]);
   const [settlementsError, setSettlementsError] = useState("");
@@ -272,6 +273,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       await updateTravel(travelId, { nombre: name, id_categoria: categoryId });
       setIsEditTripOpen(false);
       await refreshAll();
+      setStatusMessage("Viaje actualizado correctamente.");
     } catch (error) {
       setTripNameError(error.message);
     }
@@ -390,6 +392,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         monto: amount,
       });
       setSettleSuccessMessage("Pago registrado. El balance se actualizó.");
+      setStatusMessage("Balance actualizado correctamente.");
       await refreshAll();
       await refreshSettlements();
     } catch (error) {
@@ -421,6 +424,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       }
       setIsSettleAllConfirmOpen(false);
       setSettleSuccessMessage("Pagos registrados. El balance se actualizó.");
+      setStatusMessage("Balance actualizado correctamente.");
       await refreshAll();
       await refreshSettlements();
     } catch (error) {
@@ -432,13 +436,17 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
 
 
   return (
-    <main className="travel-page" aria-labelledby="travel-title">
+    <main className="travel-page" id="contenido-principal" tabIndex={-1} aria-labelledby="travel-title">
       <DashboardHeader
         activeView={views.home}
         currentUser={currentUser}
         goTo={goTo}
         onLogout={onLogout}
       />
+
+      <div className="sr-only" aria-live="polite" role="status">
+        {statusMessage}
+      </div>
 
       <section className="travel-content">
         <div className="travel-hero">
@@ -484,7 +492,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           </p>
         ) : null}
 
-        <div className="metric-grid" aria-label="Resumen del viaje">
+        <div className="metric-grid" aria-label="Resumen del viaje" aria-live="polite">
           <article className="metric-card">
             <span>Gastos totales</span>
             <strong>{formatCurrency(totalGastos)}</strong>
@@ -521,15 +529,24 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
               ) : null}
             </div>
 
-            <div className="participant-table" role="table" aria-label="Tabla de participantes con balance">
-              <div className="participant-row-head no-actions" role="row">
-                <span role="columnheader">Usuario</span>
-                <span role="columnheader">Balance</span>
+            <div className="participant-table" aria-label="Lista de participantes con balance" aria-live="polite">
+              <div className="participant-row-head no-actions" aria-hidden="true">
+                <span>Usuario</span>
+                <span>Balance</span>
               </div>
 
-              {participantRows.map((row) => (
-                <div className="participant-row-item no-actions" role="row" key={row.id_usuario}>
-                  <div role="cell" className="participant-identity">
+              {participantRows.map((row) => {
+                const numericBalance = Number(row.balance_final ?? 0);
+                const balanceDescription =
+                  numericBalance > 0
+                    ? `${row.nombre} debe recibir ${formatCurrency(numericBalance)}`
+                    : numericBalance < 0
+                      ? `${row.nombre} debe pagar ${formatCurrency(Math.abs(numericBalance))}`
+                      : `${row.nombre} no tiene saldo pendiente`;
+
+                return (
+                <article className="participant-row-item no-actions" key={row.id_usuario} aria-label={balanceDescription}>
+                  <div className="participant-identity">
                     <div className="participant-avatar" aria-hidden="true">
                       {avatarLetter(row.nombre)}
                     </div>
@@ -538,11 +555,12 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                       {row.correo ? <div className="muted">{row.correo}</div> : null}
                     </div>
                   </div>
-                  <div role="cell" className={`participant-balance ${balanceClass(row.balance_final)}`}>
+                  <div className={`participant-balance ${balanceClass(row.balance_final)}`}>
                     {formatCurrency(row.balance_final)}
                   </div>
-                </div>
-              ))}
+                </article>
+              );
+              })}
             </div>
           </section>
 
@@ -626,6 +644,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         onCategoriesChanged={(updated) => setExpenseCategories(updated)}
         onCreated={async () => {
           await refreshAll();
+          setStatusMessage("Gasto creado correctamente. Balance actualizado correctamente.");
         }}
       />
 
@@ -846,6 +865,8 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                             id="payment-target"
                             name="payment-target"
                             value={paymentTargetUserId}
+                            required
+                            aria-invalid={paymentError ? "true" : "false"}
                             onChange={(event) => {
                               setPaymentTargetUserId(event.target.value);
                               const selected = (settlements ?? []).find(
@@ -866,10 +887,13 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                         </div>
 
                         <TextInput
+                          error={paymentError}
                           id="payment-amount"
                           label="Monto pagado"
                           inputMode="decimal"
                           onChange={(event) => setPaymentAmountDraft(event.target.value)}
+                          required
+                          type="number"
                           value={paymentAmountDraft}
                         />
 
@@ -936,6 +960,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             id="edit-trip-name"
             label="Asunto del viaje"
             onChange={(event) => setTripNameDraft(event.target.value)}
+            required
             value={tripNameDraft}
           />
           <div className="field">
@@ -947,6 +972,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                 id="edit-trip-category"
                 name="edit-trip-category"
                 onChange={(event) => setTripCategoryDraft(event.target.value)}
+                required
                 value={tripCategoryDraft}
               >
                 <option value="">Selecciona una categoría</option>

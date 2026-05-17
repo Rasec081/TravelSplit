@@ -118,7 +118,7 @@ export function Modal({
               className="icon-button"
               type="button"
               onClick={() => onCloseRef.current?.()}
-              aria-label="Cerrar"
+              aria-label={`Cerrar ${title}`}
             >
               <span aria-hidden="true">×</span>
             </button>

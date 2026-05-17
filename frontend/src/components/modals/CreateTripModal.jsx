@@ -219,6 +219,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
             autoFocus
             onChange={(event) => setTripName(event.target.value)}
             placeholder="Viaje a la playa"
+            required
             value={tripName}
           />
 
@@ -232,6 +233,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
                 id="create-trip-category"
                 name="create-trip-category"
                 onChange={(event) => setCategoryId(event.target.value)}
+                required
                 value={categoryId}
               >
                 <option value="">Seleccione una opción</option>

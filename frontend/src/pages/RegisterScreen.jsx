@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { PasswordInput } from "../components/forms/PasswordInput";
 import { TextInput } from "../components/forms/TextInput";
 import { views } from "../routes/views";
 import { registerUser } from "../services/authService";
@@ -87,7 +88,7 @@ export function RegisterScreen({ goTo }) {
   }
 
   return (
-    <main className="auth-page auth-page-register" aria-labelledby="register-title">
+    <main className="auth-page auth-page-register" id="contenido-principal" tabIndex={-1} aria-labelledby="register-title">
       <button className="back-link" type="button" onClick={() => goTo(views.login)}>
         &larr; Regresar al inicio de sesión
       </button>
@@ -111,6 +112,7 @@ export function RegisterScreen({ goTo }) {
                 label="Nombre"
                 onChange={(event) => updateField("name", event.target.value)}
                 placeholder="Juan"
+                required
                 value={formData.name}
               />
               <TextInput
@@ -128,6 +130,7 @@ export function RegisterScreen({ goTo }) {
               label="Correo electrónico"
               onChange={(event) => updateField("email", event.target.value)}
               placeholder="Juan@example.com"
+              required
               type="email"
               value={formData.email}
             />
@@ -138,22 +141,24 @@ export function RegisterScreen({ goTo }) {
               <p className="form-section-title">Datos de acceso</p>
               <span>Credenciales para proteger tu cuenta.</span>
             </div>
-            <TextInput
+            <PasswordInput
+              autoComplete="new-password"
               error={errors.password}
               id="register-password"
               label="Contraseña"
               onChange={(event) => updateField("password", event.target.value)}
               placeholder="Mínimo 8 caracteres"
-              type="password"
+              required
               value={formData.password}
             />
-            <TextInput
+            <PasswordInput
+              autoComplete="new-password"
               error={errors.confirmPassword}
               id="register-confirm-password"
               label="Confirma tu contraseña"
               onChange={(event) => updateField("confirmPassword", event.target.value)}
               placeholder="Contraseña"
-              type="password"
+              required
               value={formData.confirmPassword}
             />
           </div>

@@ -103,7 +103,7 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
   }
 
   return (
-    <main className="home-page profile-page" aria-labelledby="profile-title">
+    <main className="home-page profile-page" id="contenido-principal" tabIndex={-1} aria-labelledby="profile-title">
       <DashboardHeader
         activeView={views.profile}
         currentUser={currentUser}

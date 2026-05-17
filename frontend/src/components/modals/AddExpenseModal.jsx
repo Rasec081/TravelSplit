@@ -663,6 +663,7 @@ export function AddExpenseModal({
                 label="Nombre o descripción"
                 onChange={(event) => setDescripcion(event.target.value)}
                 placeholder="Ej: Cena grupal"
+                required
                 value={descripcion}
               />
 
@@ -674,6 +675,8 @@ export function AddExpenseModal({
                 onChange={(event) => setMonto(sanitizeDecimalInput(event.target.value))}
                 pattern="[0-9]*[.]?[0-9]*"
                 placeholder="Ej: 45000"
+                required
+                type="number"
                 value={monto}
               />
 
@@ -695,6 +698,7 @@ export function AddExpenseModal({
                   name="expense-category"
                   value={categoriaId}
                   onChange={(event) => setCategoriaId(event.target.value)}
+                  required
                   aria-describedby={errors.categoriaId ? "expense-category-error" : undefined}
                   aria-invalid={errors.categoriaId ? "true" : "false"}
                 >
@@ -719,6 +723,7 @@ export function AddExpenseModal({
                   name="expense-payer"
                   value={pagadorId}
                   onChange={(event) => setPagadorId(event.target.value)}
+                  required
                   aria-describedby={errors.pagadorId ? "expense-payer-error" : undefined}
                   aria-invalid={errors.pagadorId ? "true" : "false"}
                 >
@@ -778,48 +783,50 @@ export function AddExpenseModal({
                   </p>
                 ) : null}
 
-                <h4 className="division-subtitle">Divisiones rápidas</h4>
-                <div className="division-option-grid" role="radiogroup" aria-label="Tipo de división">
-                  <label className={`division-type-card ${divisionType === "equal" ? "active" : ""}`}>
-                    <input
-                      type="radio"
-                      name="division-type"
-                      value="equal"
-                      checked={divisionType === "equal"}
-                      onChange={() => setDivisionType("equal")}
-                    />
-                    <span className="division-type-check" aria-hidden="true">✓</span>
-                    <DivisionTypeIcon type="equal" />
-                    <strong>División igualitaria</strong>
-                    <span>Divide el monto por igual entre los participantes.</span>
-                  </label>
-                  <label className={`division-type-card ${divisionType === "shares" ? "active" : ""}`}>
-                    <input
-                      type="radio"
-                      name="division-type"
-                      value="shares"
-                      checked={divisionType === "shares"}
-                      onChange={() => setDivisionType("shares")}
-                    />
-                    <span className="division-type-check" aria-hidden="true">✓</span>
-                    <DivisionTypeIcon type="shares" />
-                    <strong>División por partes o porcentajes</strong>
-                    <span>Divide el monto por porcentajes o partes específicas.</span>
-                  </label>
-                  <label className={`division-type-card ${divisionType === "custom" ? "active" : ""}`}>
-                    <input
-                      type="radio"
-                      name="division-type"
-                      value="custom"
-                      checked={divisionType === "custom"}
-                      onChange={() => setDivisionType("custom")}
-                    />
-                    <span className="division-type-check" aria-hidden="true">✓</span>
-                    <DivisionTypeIcon type="custom" />
-                    <strong>División personalizada</strong>
-                    <span>Asigna un monto específico a cada participante.</span>
-                  </label>
-                </div>
+                <fieldset className="division-type-fieldset">
+                  <legend className="division-subtitle">Tipo de división</legend>
+                  <div className="division-option-grid">
+                    <label className={`division-type-card ${divisionType === "equal" ? "active" : ""}`}>
+                      <input
+                        type="radio"
+                        name="division-type"
+                        value="equal"
+                        checked={divisionType === "equal"}
+                        onChange={() => setDivisionType("equal")}
+                      />
+                      <span className="division-type-check" aria-hidden="true">✓</span>
+                      <DivisionTypeIcon type="equal" />
+                      <strong>División igualitaria</strong>
+                      <span>Divide el monto por igual entre los participantes.</span>
+                    </label>
+                    <label className={`division-type-card ${divisionType === "shares" ? "active" : ""}`}>
+                      <input
+                        type="radio"
+                        name="division-type"
+                        value="shares"
+                        checked={divisionType === "shares"}
+                        onChange={() => setDivisionType("shares")}
+                      />
+                      <span className="division-type-check" aria-hidden="true">✓</span>
+                      <DivisionTypeIcon type="shares" />
+                      <strong>División por partes o porcentajes</strong>
+                      <span>Divide el monto por porcentajes o partes específicas.</span>
+                    </label>
+                    <label className={`division-type-card ${divisionType === "custom" ? "active" : ""}`}>
+                      <input
+                        type="radio"
+                        name="division-type"
+                        value="custom"
+                        checked={divisionType === "custom"}
+                        onChange={() => setDivisionType("custom")}
+                      />
+                      <span className="division-type-check" aria-hidden="true">✓</span>
+                      <DivisionTypeIcon type="custom" />
+                      <strong>División personalizada</strong>
+                      <span>Asigna un monto específico a cada participante.</span>
+                    </label>
+                  </div>
+                </fieldset>
 
                 <div className="saved-division-list-panel" aria-label="Divisiones de gasto guardadas">
                   <button
@@ -855,13 +862,25 @@ export function AddExpenseModal({
                                 {(preset.participantIds?.length ?? 0) === 1 ? "participante" : "participantes"}
                               </span>
                               <div className="saved-division-actions">
-                                <button type="button" onClick={() => handleApplyDivisionPreset(preset)}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyDivisionPreset(preset)}
+                                  aria-label={`Aplicar división ${preset.name}`}
+                                >
                                   Aplicar
                                 </button>
-                                <button type="button" onClick={() => handleApplyDivisionPreset(preset, { edit: true })}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApplyDivisionPreset(preset, { edit: true })}
+                                  aria-label={`Editar división ${preset.name}`}
+                                >
                                   Editar
                                 </button>
-                                <button type="button" onClick={() => handleDeleteDivisionPreset(preset.id)}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteDivisionPreset(preset.id)}
+                                  aria-label={`Eliminar división ${preset.name}`}
+                                >
                                   Eliminar
                                 </button>
                               </div>
@@ -942,8 +961,9 @@ export function AddExpenseModal({
                             <input
                               id={`custom-${id}`}
                               inputMode="decimal"
-                              pattern="[0-9]*[.]?[0-9]*"
-                              type="text"
+                              min="0"
+                              step="0.01"
+                              type="number"
                               value={customAmounts[id] ?? ""}
                               onChange={(event) => setCustomAmountValue(id, event.target.value)}
                             />

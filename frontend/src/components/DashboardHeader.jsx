@@ -15,7 +15,7 @@ export function DashboardHeader({ activeView, currentUser, goTo, onLogout }) {
           <span aria-hidden="true">TS</span>
           <strong>TravelSplit</strong>
         </button>
-        <nav aria-label="Principal" className="home-nav">
+        <nav aria-label="Navegación principal" className="home-nav">
           <button
             className={`home-nav-link ${activeView === views.home ? "active" : ""}`}
             type="button"

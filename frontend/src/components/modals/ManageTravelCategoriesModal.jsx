@@ -229,6 +229,7 @@ export function ManageTravelCategoriesModal({ currentUser, isOpen, onClose, onCh
                               type="button"
                               onClick={() => startEditing(category)}
                               disabled={isLoading}
+                              aria-label={`Editar categoría ${category.nombre_categoria}`}
                             >
                               Editar
                             </button>
@@ -237,6 +238,7 @@ export function ManageTravelCategoriesModal({ currentUser, isOpen, onClose, onCh
                               type="button"
                               onClick={() => requestDelete(category)}
                               disabled={isLoading}
+                              aria-label={`Eliminar categoría ${category.nombre_categoria}`}
                             >
                               Eliminar
                             </button>
@@ -259,6 +261,7 @@ export function ManageTravelCategoriesModal({ currentUser, isOpen, onClose, onCh
             label="Agregar categoría"
             onChange={(event) => setNewCategoryName(event.target.value)}
             placeholder="Ej: Académico"
+            required
             value={newCategoryName}
           />
           <div className="modal-actions-inline">

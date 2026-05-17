@@ -310,6 +310,7 @@ export function ManageParticipantsModal({
             label="Agregar usuario por correo"
             onChange={(event) => setAddEmail(event.target.value)}
             placeholder="usuario@correo.com"
+            required
             type="email"
             value={addEmail}
           />

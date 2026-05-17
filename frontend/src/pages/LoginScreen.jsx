@@ -52,7 +52,7 @@ export function LoginScreen({ goTo, onLogin }) {
   }
 
   return (
-    <main className="auth-page auth-page-login" aria-labelledby="login-title">
+    <main className="auth-page auth-page-login" id="contenido-principal" tabIndex={-1} aria-labelledby="login-title">
       <BrandHeader />
 
       <section className="auth-card login-card">
@@ -69,6 +69,7 @@ export function LoginScreen({ goTo, onLogin }) {
             label="Correo electrónico"
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Ingresa tu correo electrónico"
+            required
             type="email"
             value={email}
           />
@@ -79,6 +80,7 @@ export function LoginScreen({ goTo, onLogin }) {
             label="Contraseña"
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Ingresa tu contraseña"
+            required
             value={password}
           />
 

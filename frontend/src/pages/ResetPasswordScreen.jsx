@@ -40,7 +40,7 @@ export function ResetPasswordScreen({ goTo }) {
   }
 
   return (
-    <main className="auth-page auth-page-reset" aria-labelledby="reset-title">
+    <main className="auth-page auth-page-reset" id="contenido-principal" tabIndex={-1} aria-labelledby="reset-title">
       <button className="back-link" type="button" onClick={() => goTo(views.login)}>
         &larr; Regresar al inicio de sesión
       </button>
@@ -56,6 +56,7 @@ export function ResetPasswordScreen({ goTo }) {
             label="Correo electrónico"
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Ingresa tu correo electrónico"
+            required
             type="email"
             value={email}
           />

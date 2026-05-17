@@ -68,9 +68,20 @@ button:disabled {
   opacity: 0.68;
 }
 
+.field:has(input[required]) > label::after,
+.field:has(select[required]) > label::after,
+.field:has(textarea[required]) > label::after {
+  content: " *";
+  color: var(--danger);
+}
+
 :focus-visible {
   outline: 3px solid rgb(0 109 91 / 28%);
   outline-offset: 3px;
+}
+
+main:focus {
+  outline: none;
 }
 
 .auth-page {
@@ -308,7 +319,14 @@ button:disabled {
   margin: 0 0 10px;
   color: var(--primary);
   font-size: 13px;
+  font-weight: 850;
   text-transform: uppercase;
+}
+
+.division-type-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .division-option-grid {
