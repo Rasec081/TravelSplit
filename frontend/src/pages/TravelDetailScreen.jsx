@@ -545,7 +545,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                       : `${row.nombre} no tiene saldo pendiente`;
 
                 return (
-                <article className="participant-row-item no-actions" key={row.id_usuario} aria-label={balanceDescription}>
+                <article className="participant-row-item no-actions" key={row.id_usuario}>
                   <div className="participant-identity">
                     <div className="participant-avatar" aria-hidden="true">
                       {avatarLetter(row.nombre)}
@@ -556,7 +556,8 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                     </div>
                   </div>
                   <div className={`participant-balance ${balanceClass(row.balance_final)}`}>
-                    {formatCurrency(row.balance_final)}
+                    <span aria-hidden="true">{formatCurrency(row.balance_final)}</span>
+                    <span className="sr-only">{balanceDescription}</span>
                   </div>
                 </article>
               );
