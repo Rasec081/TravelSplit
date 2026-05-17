@@ -59,7 +59,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
     try {
       const [response, categoryResponse] = await Promise.all([
         listTravelsByUser(currentUser.id_usuario),
-        listTravelCategories(),
+        listTravelCategories(currentUser.id_usuario),
       ]);
       const nextTravels = response ?? [];
       setTravels(nextTravels);
@@ -235,6 +235,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
       />
 
       <ManageTravelCategoriesModal
+        currentUser={currentUser}
         isOpen={isCategoriesOpen}
         onClose={() => setIsCategoriesOpen(false)}
         onChanged={() => refreshTravels()}

@@ -32,7 +32,7 @@ function TrashIcon() {
   );
 }
 
-export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
+export function ManageExpenseCategoriesModal({ currentUser, isOpen, onClose, onChanged }) {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -54,9 +54,16 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
   }, [isLoading]);
 
   const sortedCategories = useMemo(() => {
-    return [...(categories ?? [])].sort((a, b) =>
-      String(a.nombre_categoria).localeCompare(String(b.nombre_categoria), "es"),
-    );
+    return [...(categories ?? [])].sort((a, b) => {
+      const aIsUserCategory = Boolean(a.id_usuario);
+      const bIsUserCategory = Boolean(b.id_usuario);
+
+      if (aIsUserCategory !== bIsUserCategory) {
+        return aIsUserCategory ? 1 : -1;
+      }
+
+      return String(a.nombre_categoria).localeCompare(String(b.nombre_categoria), "es");
+    });
   }, [categories]);
 
   async function refresh() {
@@ -64,7 +71,7 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
     setErrors({});
     setStatusMessage("Cargando categorías...");
     try {
-      const response = await listExpenseCategories();
+      const response = await listExpenseCategories(currentUser?.id_usuario);
       setCategories(response ?? []);
       setStatusMessage("");
     } catch (error) {
@@ -105,7 +112,7 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
     try {
       setIsLoading(true);
       setStatusMessage("Agregando categoría...");
-      await createExpenseCategory(name);
+      await createExpenseCategory(name, currentUser?.id_usuario);
       setNewCategoryName("");
       await refresh();
       onChanged?.();
@@ -144,7 +151,7 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
     try {
       setIsLoading(true);
       setStatusMessage("Guardando cambios...");
-      await updateCategory(editingId, name);
+      await updateCategory(editingId, name, currentUser?.id_usuario);
       setEditingId(null);
       setEditingName("");
       await refresh();
@@ -166,7 +173,7 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
     try {
       setIsLoading(true);
       setStatusMessage("Eliminando categoría...");
-      await deleteCategory(pendingDelete.id_categoria);
+      await deleteCategory(pendingDelete.id_categoria, currentUser?.id_usuario);
       setPendingDelete(null);
       await refresh();
       onChanged?.();
@@ -210,6 +217,7 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
             <ul className="category-list" aria-label="Categorías registradas">
               {sortedCategories.map((category) => {
                 const isEditing = editingId === category.id_categoria;
+                const canManageCategory = category.id_usuario === currentUser?.id_usuario;
                 return (
                   <li key={category.id_categoria} className="category-card">
                     {isEditing ? (
@@ -239,7 +247,8 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
                     ) : (
                       <div className="category-row">
                         <span className="category-name">{category.nombre_categoria}</span>
-                        <div className="category-actions">
+                        {canManageCategory ? (
+                          <div className="category-actions">
                           <button
                             className="icon-action-button"
                             type="button"
@@ -260,7 +269,8 @@ export function ManageExpenseCategoriesModal({ isOpen, onClose, onChanged }) {
                             <TrashIcon />
                             <span className="sr-only">Eliminar</span>
                           </button>
-                        </div>
+                          </div>
+                        ) : null}
                       </div>
                     )}
                   </li>

@@ -34,7 +34,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
   );
 
   async function reloadCategories() {
-    const categoriesResponse = await listTravelCategories();
+    const categoriesResponse = await listTravelCategories(currentUser?.id_usuario);
     setCategories(categoriesResponse ?? []);
   }
 
@@ -49,7 +49,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
 
       try {
         const [categoriesResponse, usersResponse] = await Promise.all([
-          listTravelCategories(),
+          listTravelCategories(currentUser?.id_usuario),
           listUsers(),
         ]);
         if (cancelled) return;
@@ -330,6 +330,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
       </Modal>
 
       <ManageTravelCategoriesModal
+        currentUser={currentUser}
         isOpen={isCategoriesOpen}
         onClose={() => setIsCategoriesOpen(false)}
         onChanged={async () => {

@@ -40,9 +40,15 @@ CREATE TABLE categorias (
     id_categoria SERIAL PRIMARY KEY,
     nombre_categoria VARCHAR(256) NOT NULL,
     tipo VARCHAR(16) NOT NULL,
+    id_usuario INT,
 
     CONSTRAINT chk_tipo_categoria
-        CHECK (tipo IN ('viaje', 'gasto'))
+        CHECK (tipo IN ('viaje', 'gasto')),
+
+    CONSTRAINT fk_categoria_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE
 );
 
 -- =========================================

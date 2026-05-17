@@ -1,3 +1,5 @@
+from sqlalchemy import inspect, text
+
 from app.database.connection import Base, engine
 
 # Importa los modelos para que SQLAlchemy registre las tablas en el metadata.
@@ -12,4 +14,18 @@ from app.database.models.user_model import User  # noqa: F401
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+
+    inspector = inspect(engine)
+    if "categorias" not in inspector.get_table_names():
+        return
+
+    column_names = {column["name"] for column in inspector.get_columns("categorias")}
+    if "id_usuario" not in column_names:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "ALTER TABLE categorias "
+                    "ADD COLUMN id_usuario INTEGER REFERENCES usuarios(id_usuario) ON DELETE CASCADE"
+                )
+            )
 

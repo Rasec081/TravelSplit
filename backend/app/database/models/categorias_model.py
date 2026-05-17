@@ -1,4 +1,4 @@
-from sqlalchemy import String
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.connection import Base
@@ -12,3 +12,7 @@ class Categoria(Base):
     id_categoria: Mapped[int] = mapped_column(primary_key=True, index=True)
     nombre_categoria: Mapped[str] = mapped_column(String(256), nullable=False)
     tipo: Mapped[str] = mapped_column(String(16), nullable=False)
+    id_usuario: Mapped[int | None] = mapped_column(
+        ForeignKey("usuarios.id_usuario", ondelete="CASCADE"),
+        nullable=True,
+    )

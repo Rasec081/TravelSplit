@@ -1007,10 +1007,11 @@ export function AddExpenseModal({
       </Modal>
 
       <ManageExpenseCategoriesModal
+        currentUser={currentUser}
         isOpen={isManageCategoriesOpen}
         onClose={() => setIsManageCategoriesOpen(false)}
         onChanged={async () => {
-          const updated = await listExpenseCategories();
+          const updated = await listExpenseCategories(currentUser?.id_usuario);
           onCategoriesChanged?.(updated ?? []);
         }}
       />

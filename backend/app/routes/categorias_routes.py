@@ -52,6 +52,10 @@ def validar_categoria_create(categoria_data: CategoriaCreate) -> tuple[bool, str
     if categoria_data.tipo not in ["viaje", "gasto"]:
         print(f"[ERROR] tipo debe ser 'viaje' o 'gasto', se recibió: '{categoria_data.tipo}'")
         return False, "El campo 'tipo' debe ser 'viaje' o 'gasto'"
+
+    if categoria_data.id_usuario is not None and categoria_data.id_usuario <= 0:
+        print(f"[ERROR] id_usuario debe ser mayor a 0, se recibió: {categoria_data.id_usuario}")
+        return False, "El campo 'id_usuario' debe ser mayor a 0"
     
     return True, ""
 
@@ -141,6 +145,7 @@ def create_categoria(
 @router.get("", response_model=list[CategoriaResponse])
 def list_categorias(
     tipo: str | None = Query(None, description="Filtrar por tipo: 'viaje' o 'gasto'"),
+    id_usuario: int | None = Query(None, description="Usuario que consulta sus categorías privadas."),
     db: Session = Depends(get_db),
 ) -> list[CategoriaResponse]:
     """Lista todas las categorías, opcionalmente filtradas por tipo."""
@@ -154,6 +159,12 @@ def list_categorias(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"El parámetro 'tipo' debe ser string, se recibió {type(tipo).__name__}",
             )
+
+    if id_usuario is not None and id_usuario <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El parámetro 'id_usuario' debe ser mayor a 0",
+        )
         
         if tipo not in ["viaje", "gasto"]:
             print(f"[ERROR] 'tipo' debe ser 'viaje' o 'gasto', se recibió: '{tipo}'")
@@ -164,7 +175,7 @@ def list_categorias(
     
     try:
         print("[INFO] Filtrando categorías...")
-        categorias = categories.get_categorias(db, tipo)
+        categorias = categories.get_categorias(db, tipo, id_usuario)
         print(f"[SUCCESS] Se obtuvieron {len(categorias)} categoría(s)")
         return categorias
     except Exception as exc:
@@ -178,6 +189,7 @@ def list_categorias(
 @router.get("/{categoria_id}", response_model=CategoriaResponse)
 def get_categoria(
     categoria_id: int,
+    id_usuario: int | None = Query(None, description="Usuario que consulta la categoría."),
     db: Session = Depends(get_db),
 ) -> CategoriaResponse:
     """Obtiene una categoría por ID."""
@@ -208,6 +220,12 @@ def get_categoria(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No se encontró una categoría con ese identificador.",
             )
+
+        if categoria.id_usuario is not None and categoria.id_usuario != id_usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontró una categoría con ese identificador.",
+            )
         
         print(f"[SUCCESS] Categoría encontrada: {categoria.nombre_categoria}")
         return categoria
@@ -225,6 +243,7 @@ def get_categoria(
 def update_categoria(
     categoria_id: int,
     categoria_data: CategoriaUpdate,
+    id_usuario: int | None = Query(None, description="Usuario propietario de la categoría."),
     db: Session = Depends(get_db),
 ) -> CategoriaMessageResponse:
     """Actualiza una categoría existente."""
@@ -265,6 +284,18 @@ def update_categoria(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No se encontró una categoría con ese identificador.",
             )
+
+        if categoria.id_usuario is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Las categorías del sistema no se pueden modificar.",
+            )
+
+        if categoria.id_usuario != id_usuario:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontró una categoría con ese identificador.",
+            )
         
         print("[INFO] Categoría encontrada, procediendo a actualizar...")
         updated_categoria = categories.update_categoria(db, categoria, categoria_data)
@@ -293,6 +324,7 @@ def update_categoria(
 @router.delete("/{categoria_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_categoria(
     categoria_id: int,
+    id_usuario: int | None = Query(None, description="Usuario propietario de la categoría."),
     db: Session = Depends(get_db),
 ) -> None:
     """Elimina una categoría."""
@@ -319,6 +351,18 @@ def delete_categoria(
         
         if not categoria:
             print(f"[ERROR] Categoría con ID {categoria_id} no encontrada")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontró una categoría con ese identificador.",
+            )
+
+        if categoria.id_usuario is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Las categorías del sistema no se pueden eliminar.",
+            )
+
+        if categoria.id_usuario != id_usuario:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No se encontró una categoría con ese identificador.",

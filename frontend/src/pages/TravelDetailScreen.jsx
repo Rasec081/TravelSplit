@@ -145,8 +145,8 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         listUsersByTravel(travelId),
         listUsers(),
         listGastosByTravel(travelId),
-        listExpenseCategories(),
-        listTravelCategories(),
+        listExpenseCategories(currentUser?.id_usuario),
+        listTravelCategories(currentUser?.id_usuario),
       ]);
 
       setTravel(travelResponse ?? null);
@@ -168,7 +168,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   }, [travelId]);
 
   async function reloadTravelCategories() {
-    const response = await listTravelCategories();
+    const response = await listTravelCategories(currentUser?.id_usuario);
     setTravelCategories(response ?? []);
   }
 
@@ -506,6 +506,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       </Modal>
 
       <ManageTravelCategoriesModal
+        currentUser={currentUser}
         isOpen={isTravelCategoriesOpen}
         onClose={() => setIsTravelCategoriesOpen(false)}
         onChanged={async () => {
