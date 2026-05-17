@@ -12,7 +12,7 @@ export async function request(path, options) {
     });
   } catch (error) {
     throw new Error(
-      "No se pudo conectar con el backend. Verifica que la API esté encendida en http://localhost:8000.",
+      `No se pudo conectar con el backend. Verifica que la API esté encendida en ${API_URL}.`,
     );
   }
 

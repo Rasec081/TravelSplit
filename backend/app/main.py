@@ -52,6 +52,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
     ],
+    allow_origin_regex=r"https://.*\.devtunnels\.ms",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
