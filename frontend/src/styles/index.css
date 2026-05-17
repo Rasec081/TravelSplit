@@ -872,6 +872,25 @@ button:disabled {
   background: var(--surface);
 }
 
+.participant-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.participant-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: #146c5f;
+  color: #ffffff;
+  font-weight: 900;
+}
+
 .muted {
   margin-top: 4px;
   color: var(--text-muted);
@@ -1217,6 +1236,35 @@ button:disabled {
   display: grid;
   gap: 18px;
   margin-top: 18px;
+}
+
+.balance-modal-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.balance-modal-tab {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 12px;
+  background: transparent;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.balance-modal-tab.is-active {
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.balance-modal-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(0 109 91 / 12%);
 }
 
 .modal-body {

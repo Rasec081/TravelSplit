@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 
+import { useRef } from "react";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Modal } from "../components/modals/Modal";
 import { ConfirmDialog } from "../components/modals/ConfirmDialog";
@@ -41,6 +42,12 @@ function balanceClass(balance) {
   return "balance-zero";
 }
 
+function avatarLetter(name) {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return "?";
+  return trimmed.slice(0, 1).toLocaleUpperCase("es-CR");
+}
+
 function isTravelClosed(travel) {
   if (!travel?.fecha_cierre) return false;
 
@@ -66,6 +73,8 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const [isTravelCategoriesOpen, setIsTravelCategoriesOpen] = useState(false);
   const [isPersonalBalanceOpen, setIsPersonalBalanceOpen] = useState(false);
   const [isSettleAllConfirmOpen, setIsSettleAllConfirmOpen] = useState(false);
+  const [personalBalanceSection, setPersonalBalanceSection] = useState("resumen");
+  const balanceTabRefs = useRef([]);
 
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
   const [tripNameDraft, setTripNameDraft] = useState("");
@@ -86,12 +95,18 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const [paymentError, setPaymentError] = useState("");
   const [isPaymentSaving, setIsPaymentSaving] = useState(false);
 
-  const isAdmin = useMemo(() => {
+  const isOwner = useMemo(() => {
     if (!travel || !currentUser) return false;
     return travel.id_usuario_creador === currentUser.id_usuario;
   }, [travel, currentUser]);
+  const hasAdminRole = useMemo(() => {
+    if (!currentUser) return false;
+    return (userTravels ?? []).some(
+      (ut) => ut.id_usuario === currentUser.id_usuario && String(ut.rol ?? "").toLowerCase() === "admin",
+    );
+  }, [userTravels, currentUser]);
   const isClosed = useMemo(() => isTravelClosed(travel), [travel]);
-  const canEditTravel = isAdmin && !isClosed;
+  const canManageTravel = (isOwner || hasAdminRole) && !isClosed;
 
   const userById = useMemo(() => {
     return new Map((users ?? []).map((user) => [user.id_usuario, user]));
@@ -214,6 +229,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
 
   useEffect(() => {
     if (!isPersonalBalanceOpen) return;
+    setPersonalBalanceSection("resumen");
     setSettleSuccessMessage("");
     setPaymentError("");
     refreshSettlements();
@@ -287,6 +303,49 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
 
   function getPayItems() {
     return (settlements ?? []).filter((item) => item.tipo === "pagar_a");
+  }
+
+  function getReceiveItems() {
+    return (settlements ?? []).filter((item) => item.tipo === "recibir_de");
+  }
+
+  const balanceTabs = useMemo(() => ["resumen", "saldar"], []);
+  const activeBalanceTabIndex = useMemo(() => {
+    const index = balanceTabs.indexOf(personalBalanceSection);
+    return index >= 0 ? index : 0;
+  }, [balanceTabs, personalBalanceSection]);
+
+  function setActiveBalanceTabIndex(nextIndex) {
+    const safeIndex = ((nextIndex % balanceTabs.length) + balanceTabs.length) % balanceTabs.length;
+    setPersonalBalanceSection(balanceTabs[safeIndex]);
+    setTimeout(() => {
+      const node = balanceTabRefs.current[safeIndex];
+      if (node && typeof node.focus === "function") node.focus();
+    }, 0);
+  }
+
+  function handleBalanceTabsKeyDown(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(activeBalanceTabIndex - 1);
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(activeBalanceTabIndex + 1);
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(balanceTabs.length - 1);
+      return;
+    }
   }
 
   function getSelectedPayItem() {
@@ -406,7 +465,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           >
             Balance
           </button>
-          {canEditTravel ? (
+          {canManageTravel ? (
             <>
               <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(true)}>
                 Editar viaje
@@ -441,9 +500,9 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             <div className="panel-header">
               <div>
                 <h2>Participantes</h2>
-                <p>{isAdmin ? "Balance individual de cada participante." : "Integrantes del viaje."}</p>
+                <p>Balance individual de cada participante.</p>
               </div>
-              {canEditTravel ? (
+              {canManageTravel ? (
                 <div className="panel-header-actions">
                   <button
                     className="primary-button"
@@ -456,35 +515,29 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
               ) : null}
             </div>
 
-            {isAdmin ? (
-              <div className="participant-table" role="table" aria-label="Tabla de participantes con balance">
-                <div className="participant-row-head no-actions" role="row">
-                  <span role="columnheader">Usuario</span>
-                  <span role="columnheader">Balance</span>
-                </div>
+            <div className="participant-table" role="table" aria-label="Tabla de participantes con balance">
+              <div className="participant-row-head no-actions" role="row">
+                <span role="columnheader">Usuario</span>
+                <span role="columnheader">Balance</span>
+              </div>
 
-                {participantRows.map((row) => (
-                  <div className="participant-row-item no-actions" role="row" key={row.id_usuario}>
-                    <div role="cell">
+              {participantRows.map((row) => (
+                <div className="participant-row-item no-actions" role="row" key={row.id_usuario}>
+                  <div role="cell" className="participant-identity">
+                    <div className="participant-avatar" aria-hidden="true">
+                      {avatarLetter(row.nombre)}
+                    </div>
+                    <div>
                       <strong>{row.nombre}</strong>
                       {row.correo ? <div className="muted">{row.correo}</div> : null}
                     </div>
-                    <div role="cell" className={`participant-balance ${balanceClass(row.balance_final)}`}>
-                      {formatCurrency(row.balance_final)}
-                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <ul className="participant-list" aria-label="Lista de participantes">
-                {participantRows.map((row) => (
-                  <li key={row.id_usuario} className="participant-list-item">
-                    <strong>{row.nombre}</strong>
-                    {row.correo ? <div className="muted">{row.correo}</div> : null}
-                  </li>
-                ))}
-              </ul>
-            )}
+                  <div role="cell" className={`participant-balance ${balanceClass(row.balance_final)}`}>
+                    {formatCurrency(row.balance_final)}
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
           <section className="dashboard-panel travel-panel-spacing" aria-label="Gastos recientes">
@@ -528,7 +581,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             )}
           </section>
 
-        {canEditTravel ? (
+        {canManageTravel ? (
           <div className="travel-footer">
             <button className="secondary-button" type="button" onClick={() => setIsFinalizeOpen(true)}>
               Finalizar viaje
@@ -588,6 +641,44 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             <strong>Usuario:</strong> {currentUser?.nombre ?? "—"}
           </p>
 
+          <div
+            className="balance-modal-tabs"
+            role="tablist"
+            aria-label="Secciones del balance"
+            onKeyDown={handleBalanceTabsKeyDown}
+          >
+            <button
+              className={`balance-modal-tab ${personalBalanceSection === "resumen" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              id="balance-tab-resumen"
+              aria-selected={personalBalanceSection === "resumen"}
+              aria-controls="balance-panel-resumen"
+              tabIndex={personalBalanceSection === "resumen" ? 0 : -1}
+              onClick={() => setPersonalBalanceSection("resumen")}
+              ref={(node) => {
+                balanceTabRefs.current[0] = node;
+              }}
+            >
+              Resumen
+            </button>
+            <button
+              className={`balance-modal-tab ${personalBalanceSection === "saldar" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              id="balance-tab-saldar"
+              aria-selected={personalBalanceSection === "saldar"}
+              aria-controls="balance-panel-saldar"
+              tabIndex={personalBalanceSection === "saldar" ? 0 : -1}
+              onClick={() => setPersonalBalanceSection("saldar")}
+              ref={(node) => {
+                balanceTabRefs.current[1] = node;
+              }}
+            >
+              Saldar
+            </button>
+          </div>
+
           {isLoading ? <p className="hint-text">Cargando balance…</p> : null}
           {isSettlementsLoading ? <p className="hint-text">Calculando a quién pagar/recibir…</p> : null}
 
@@ -617,118 +708,189 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             <p className="hint-text">No hay movimientos asociados a tu usuario en este viaje.</p>
           ) : null}
 
-          {!isLoading && myBalanceEntry ? (
-            <div className="personal-balance-grid" aria-label="Desglose de balance personal">
-              <div className="personal-balance-row">
-                <span>Total que yo pagué</span>
-                <strong>{formatCurrency(myBalanceEntry.total_pagado)}</strong>
-              </div>
-              <div className="personal-balance-row">
-                <span>Debo pagar</span>
-                <strong>{formatCurrency(myBalanceEntry.total_debido)}</strong>
-              </div>
-              <div className="personal-balance-row">
-                <span>Mi balance final</span>
-                <strong className={balanceClass(myBalanceEntry.balance_final)}>
-                  {formatCurrency(myBalanceEntry.balance_final)}
-                </strong>
-              </div>
+          <section
+            role="tabpanel"
+            id="balance-panel-resumen"
+            aria-labelledby="balance-tab-resumen"
+            hidden={personalBalanceSection !== "resumen"}
+            tabIndex={-1}
+          >
+            {personalBalanceSection === "resumen" ? (
+              <>
+              {!isLoading && myBalanceEntry ? (
+                <div className="personal-balance-grid" aria-label="Resumen de balance personal">
+                  <div className="personal-balance-row">
+                    <span>Total que yo pagué</span>
+                    <strong>{formatCurrency(myBalanceEntry.total_pagado)}</strong>
+                  </div>
+                  <div className="personal-balance-row">
+                    <span>Total que yo debo</span>
+                    <strong>{formatCurrency(myBalanceEntry.total_debido)}</strong>
+                  </div>
+                  <div className="personal-balance-row">
+                    <span>Mi balance</span>
+                    <strong className={balanceClass(myBalanceEntry.balance_final)}>
+                      {formatCurrency(myBalanceEntry.balance_final)}
+                    </strong>
+                  </div>
 
-              <div className="personal-balance-status" role="status">
-                {Number(myBalanceEntry.balance_final) < 0 ? (
-                  <p>
-                    <strong>Debes pagar</strong> {formatCurrency(Math.abs(Number(myBalanceEntry.balance_final)))} en este
-                    viaje.
-                  </p>
-                ) : Number(myBalanceEntry.balance_final) > 0 ? (
-                  <p>
-                    <strong>Te deben</strong> {formatCurrency(Number(myBalanceEntry.balance_final))} en este viaje.
-                  </p>
-                ) : (
-                  <p>No tienes deudas pendientes en este viaje.</p>
-                )}
-              </div>
-            </div>
-          ) : null}
+                  <div className="personal-balance-status" role="status">
+                    {Number(myBalanceEntry.balance_final) < 0 ? (
+                      <p>
+                        <strong>Debes pagar</strong> {formatCurrency(Math.abs(Number(myBalanceEntry.balance_final)))} en
+                        este viaje.
+                      </p>
+                    ) : Number(myBalanceEntry.balance_final) > 0 ? (
+                      <p>
+                        <strong>Te deben</strong> {formatCurrency(Number(myBalanceEntry.balance_final))} en este viaje.
+                      </p>
+                    ) : (
+                      <p>No tienes deudas pendientes en este viaje.</p>
+                    )}
+                  </div>
+                </div>
+              ) : null}
 
-          {!isSettlementsLoading && settlements?.length > 0 ? (
-            <section className="settlement-panel" aria-label="Desglose de liquidación personal">
-              <h3 className="settlement-title">Desglose de mi balance</h3>
-              <ul className="settlement-list" aria-label="Lista de pagos sugeridos">
-                {settlements.map((item) => (
-                  <li key={`${item.tipo}-${item.contraparte.id_usuario}`} className="settlement-item">
-                    <div>
-                      <strong>
-                        {item.tipo === "pagar_a" ? "Pagar a" : "Recibir de"} {item.contraparte.nombre}
-                      </strong>
-                      {item.contraparte.correo ? <div className="muted">{item.contraparte.correo}</div> : null}
-                    </div>
-                    <div className="settlement-amount">{formatCurrency(item.monto)}</div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
+              {!isSettlementsLoading ? (
+                <>
+                  <section className="settlement-panel" aria-label="Personas a las que debo">
+                    <h3 className="settlement-title">Personas a las que debo</h3>
+                    {getPayItems().length === 0 ? (
+                      <p className="hint-text">No tienes pagos pendientes por realizar.</p>
+                    ) : (
+                      <ul className="settlement-list" aria-label="Lista de personas a las que debo">
+                        {getPayItems().map((item) => (
+                          <li key={`pagar_a-${item.contraparte.id_usuario}`} className="settlement-item">
+                            <div>
+                              <strong>{item.contraparte.nombre}</strong>
+                              {item.contraparte.correo ? <div className="muted">{item.contraparte.correo}</div> : null}
+                            </div>
+                            <div className="settlement-amount">{formatCurrency(item.monto)}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
 
-          {!isSettlementsLoading && getPayItems().length > 0 ? (
-            <section className="settlement-panel" aria-label="Registrar pago">
-              <h3 className="settlement-title">Saldar deuda</h3>
-              <p className="hint-text">Registra un pago para que el balance se actualice automáticamente.</p>
+                  <section className="settlement-panel" aria-label="Personas que me deben">
+                    <h3 className="settlement-title">Personas que me deben</h3>
+                    {getReceiveItems().length === 0 ? (
+                      <p className="hint-text">No tienes cobros pendientes por recibir.</p>
+                    ) : (
+                      <ul className="settlement-list" aria-label="Lista de personas que me deben">
+                        {getReceiveItems().map((item) => (
+                          <li key={`recibir_de-${item.contraparte.id_usuario}`} className="settlement-item">
+                            <div>
+                              <strong>{item.contraparte.nombre}</strong>
+                              {item.contraparte.correo ? <div className="muted">{item.contraparte.correo}</div> : null}
+                            </div>
+                            <div className="settlement-amount">{formatCurrency(item.monto)}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </>
+              ) : null}
+              </>
+            ) : null}
+          </section>
 
-              <form className="settlement-form" onSubmit={handleRegisterPayment} noValidate>
-                <div className="field">
-                  <label htmlFor="payment-target">¿A quién pagaste?</label>
-                  <select
-                    id="payment-target"
-                    name="payment-target"
-                    value={paymentTargetUserId}
-                    onChange={(event) => {
-                      setPaymentTargetUserId(event.target.value);
-                      const selected = (settlements ?? []).find(
-                        (i) => i.tipo === "pagar_a" && String(i.contraparte.id_usuario) === event.target.value
-                      );
-                      if (selected) {
-                        setPaymentAmountDraft(String(selected.monto));
-                      }
-                    }}
-                  >
-                    <option value="">Selecciona un participante</option>
-                    {getPayItems().map((item) => (
-                      <option key={item.contraparte.id_usuario} value={item.contraparte.id_usuario}>
-                        {item.contraparte.nombre} ({formatCurrency(item.monto)})
-                      </option>
+          <section
+            role="tabpanel"
+            id="balance-panel-saldar"
+            aria-labelledby="balance-tab-saldar"
+            hidden={personalBalanceSection !== "saldar"}
+            tabIndex={-1}
+          >
+            {personalBalanceSection === "saldar" ? (
+              <>
+              {!isSettlementsLoading && settlements?.length > 0 ? (
+                <section className="settlement-panel" aria-label="Desglose de liquidación personal">
+                  <h3 className="settlement-title">Desglose</h3>
+                  <ul className="settlement-list" aria-label="Lista de pagos sugeridos">
+                    {settlements.map((item) => (
+                      <li key={`${item.tipo}-${item.contraparte.id_usuario}`} className="settlement-item">
+                        <div>
+                          <strong>
+                            {item.tipo === "pagar_a" ? "Pagar a" : "Recibir de"} {item.contraparte.nombre}
+                          </strong>
+                          {item.contraparte.correo ? <div className="muted">{item.contraparte.correo}</div> : null}
+                        </div>
+                        <div className="settlement-amount">{formatCurrency(item.monto)}</div>
+                      </li>
                     ))}
-                  </select>
-                </div>
+                  </ul>
+                </section>
+              ) : null}
 
-                <TextInput
-                  id="payment-amount"
-                  label="Monto pagado"
-                  inputMode="decimal"
-                  onChange={(event) => setPaymentAmountDraft(event.target.value)}
-                  value={paymentAmountDraft}
-                />
+              {!isSettlementsLoading ? (
+                <section className="settlement-panel" aria-label="Registrar pago">
+                  <h3 className="settlement-title">Saldar deudas</h3>
+                  {getPayItems().length === 0 ? (
+                    <p className="hint-text">No tienes pagos pendientes por registrar.</p>
+                  ) : (
+                    <>
+                      <p className="hint-text">Registra un pago para que el balance se actualice automáticamente.</p>
 
-                <div className="settlement-actions">
-                  <button className="create-trip-button" type="submit" disabled={isPaymentSaving}>
-                    Registrar pago
-                  </button>
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => setIsSettleAllConfirmOpen(true)}
-                    disabled={isPaymentSaving}
-                  >
-                    Registrar todos
-                  </button>
-                </div>
-              </form>
-            </section>
-          ) : null}
+                      <form className="settlement-form" onSubmit={handleRegisterPayment} noValidate>
+                        <div className="field">
+                          <label htmlFor="payment-target">¿A quién pagaste?</label>
+                          <select
+                            id="payment-target"
+                            name="payment-target"
+                            value={paymentTargetUserId}
+                            onChange={(event) => {
+                              setPaymentTargetUserId(event.target.value);
+                              const selected = (settlements ?? []).find(
+                                (i) => i.tipo === "pagar_a" && String(i.contraparte.id_usuario) === event.target.value
+                              );
+                              if (selected) {
+                                setPaymentAmountDraft(String(selected.monto));
+                              }
+                            }}
+                          >
+                            <option value="">Selecciona un participante</option>
+                            {getPayItems().map((item) => (
+                              <option key={item.contraparte.id_usuario} value={item.contraparte.id_usuario}>
+                                {item.contraparte.nombre} ({formatCurrency(item.monto)})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <TextInput
+                          id="payment-amount"
+                          label="Monto pagado"
+                          inputMode="decimal"
+                          onChange={(event) => setPaymentAmountDraft(event.target.value)}
+                          value={paymentAmountDraft}
+                        />
+
+                        <div className="settlement-actions">
+                          <button className="create-trip-button" type="submit" disabled={isPaymentSaving}>
+                            Registrar pago
+                          </button>
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={() => setIsSettleAllConfirmOpen(true)}
+                            disabled={isPaymentSaving}
+                          >
+                            Registrar todos
+                          </button>
+                        </div>
+                      </form>
+                    </>
+                  )}
+                </section>
+              ) : null}
+              </>
+            ) : null}
+          </section>
 
           <p className="hint-text">
-            Nota: por privacidad, aquí solo se muestra tu balance. Para ver el balance completo del grupo se requiere una
-            vista administrativa.
+            Tip: el balance de todos se muestra en la sección Participantes.
           </p>
         </div>
       </Modal>
@@ -848,4 +1010,3 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     </main>
   );
 }
-
