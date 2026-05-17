@@ -5,6 +5,7 @@ from sqlalchemy import func
 from app.database.models.travel_model import Travel, UserTravel
 from app.database.models.gasto_model import Gasto
 from app.database.models.div_gasto import DivisionGasto, DivisionGastoParticipante
+from app.database.models.payment_model import Payment
 from app.database.models.user_model import User
 from app.services.exceptions import TravelConflictError, TravelValidationError
 
@@ -126,6 +127,36 @@ def calculate_balance_by_travel(db: Session, travel_id: int) -> dict:
         total_debido_viaje += total_debido
     
     diferencia_viaje = total_pagado_viaje - total_debido_viaje
+
+    # ===== AJUSTE POR PAGOS (LIQUIDACIONES) =====
+    # Un pago representa dinero movido entre usuarios para saldar el balance calculado por gastos/divisiones.
+    # Regla:
+    # - Quien paga (from) aumenta su balance (menos negativo / más cercano a 0).
+    # - Quien recibe (to) disminuye su balance (menos positivo / más cercano a 0).
+    pagos = db.query(Payment).filter(Payment.id_viaje == travel_id).all()
+    if pagos:
+        print(f"[INFO] Aplicando {len(pagos)} pago(s) al balance")
+        balance_by_id = {entry["id_usuario"]: entry for entry in usuarios_balance}
+
+        for pago in pagos:
+            monto = Decimal(str(pago.monto))
+            from_id = pago.id_usuario_from
+            to_id = pago.id_usuario_to
+
+            if from_id in balance_by_id:
+                balance_by_id[from_id]["balance_final"] = Decimal(str(balance_by_id[from_id]["balance_final"])) + monto
+            if to_id in balance_by_id:
+                balance_by_id[to_id]["balance_final"] = Decimal(str(balance_by_id[to_id]["balance_final"])) - monto
+
+        # Recalcular estado post-pagos
+        for entry in usuarios_balance:
+            numeric = Decimal(str(entry["balance_final"]))
+            if numeric > 0:
+                entry["estado"] = "debe_recibir"
+            elif numeric < 0:
+                entry["estado"] = "debe_pagar"
+            else:
+                entry["estado"] = "saldado"
     
     print(f"[SUCCESS] Balance calculado:")
     print(f"  Total pagado: ${total_pagado_viaje}")

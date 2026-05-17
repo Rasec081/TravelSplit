@@ -12,7 +12,20 @@ from app.schemas.balance_schema import (
     BalanceViajeResponse,
     BalanceViajeMessageResponse,
 )
+from app.schemas.payment_schema import (
+    PaymentCreate,
+    PaymentListMessageResponse,
+    PaymentListResponse,
+    PaymentMessageResponse,
+    PaymentResponse,
+)
+from app.schemas.settlement_schema import (
+    SettlementMessageResponse,
+    SettlementResponse,
+)
 from app.services import travel, balance
+from app.services import payments as payments_service
+from app.services import settlements as settlements_service
 from app.services.exceptions import TravelConflictError, TravelValidationError
 
 router = APIRouter(prefix="/travels", tags=["Viajes"])
@@ -427,6 +440,87 @@ def get_balance_viaje(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error al calcular el balance del viaje",
         ) from exc
+
+
+@router.get("/{travel_id}/settlements/{user_id}", response_model=SettlementMessageResponse)
+def get_settlements_for_user(
+    travel_id: int = Path(gt=0),
+    user_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+) -> SettlementMessageResponse:
+    """
+    Devuelve el desglose de liquidación para un usuario dentro del viaje:
+    - A quién debe pagar y cuánto, o
+    - Quién le debe pagar y cuánto.
+
+    No retorna el balance completo de todos los usuarios, solo los movimientos necesarios para el usuario consultado.
+    """
+    try:
+        result = settlements_service.calculate_settlements_for_user(db, travel_id, user_id)
+        travel_obj = result["travel"]
+        items = result["items"]
+
+        response = SettlementResponse(
+            id_viaje=travel_obj.id_travel,
+            nombre_viaje=travel_obj.nombre,
+            id_usuario=user_id,
+            items=items,
+        )
+
+        return SettlementMessageResponse(
+            message="Desglose de liquidación calculado correctamente",
+            data=response,
+        )
+    except TravelValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al calcular liquidación") from exc
+
+
+@router.get("/{travel_id}/payments", response_model=PaymentListMessageResponse)
+def list_payments(
+    travel_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+) -> PaymentListMessageResponse:
+    """Lista pagos (liquidaciones) registrados para un viaje."""
+    try:
+        pagos = payments_service.list_payments_by_travel(db, travel_id)
+        data = PaymentListResponse(
+            id_viaje=travel_id,
+            pagos=[PaymentResponse.model_validate(p) for p in pagos],
+        )
+        return PaymentListMessageResponse(message="Pagos obtenidos correctamente", data=data)
+    except TravelValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al obtener pagos") from exc
+
+
+@router.post("/{travel_id}/payments", response_model=PaymentMessageResponse, status_code=status.HTTP_201_CREATED)
+def create_payment(
+    payment_data: PaymentCreate,
+    travel_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+) -> PaymentMessageResponse:
+    """Registra un pago entre usuarios dentro de un viaje."""
+    try:
+        pago = payments_service.create_payment(
+            db,
+            travel_id=travel_id,
+            user_from=payment_data.id_usuario_from,
+            user_to=payment_data.id_usuario_to,
+            monto=payment_data.monto,
+        )
+        return PaymentMessageResponse(
+            message="Pago registrado correctamente",
+            data=PaymentResponse.model_validate(pago),
+        )
+    except TravelValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except TravelConflictError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error al registrar pago") from exc
 
 
 @router.delete("/{travel_id}", status_code=status.HTTP_204_NO_CONTENT)

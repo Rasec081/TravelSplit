@@ -1,7 +1,9 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 
+import { useRef } from "react";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { Modal } from "../components/modals/Modal";
+import { ConfirmDialog } from "../components/modals/ConfirmDialog";
 import { TextInput } from "../components/forms/TextInput";
 import { AddExpenseModal } from "../components/modals/AddExpenseModal";
 import { ManageParticipantsModal } from "../components/modals/ManageParticipantsModal";
@@ -9,7 +11,14 @@ import { ManageTravelCategoriesModal } from "../components/modals/ManageTravelCa
 import { views } from "../routes/views";
 import { listUsers } from "../services/userService";
 import { listUsersByTravel } from "../services/userTravelService";
-import { getTravel, getTravelBalance, updateTravel, closeTravel } from "../services/travelService";
+import {
+  getTravel,
+  getTravelBalance,
+  getTravelSettlements,
+  createTravelPayment,
+  updateTravel,
+  closeTravel,
+} from "../services/travelService";
 import { listGastosByTravel } from "../services/gastoService";
 import { listExpenseCategories, listTravelCategories } from "../services/categoriesService";
 
@@ -31,6 +40,12 @@ function balanceClass(balance) {
   if (numeric > 0) return "balance-positive";
   if (numeric < 0) return "balance-negative";
   return "balance-zero";
+}
+
+function avatarLetter(name) {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return "?";
+  return trimmed.slice(0, 1).toLocaleUpperCase("es-CR");
 }
 
 function isTravelClosed(travel) {
@@ -56,6 +71,10 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
 
   const [isManageParticipantsOpen, setIsManageParticipantsOpen] = useState(false);
   const [isTravelCategoriesOpen, setIsTravelCategoriesOpen] = useState(false);
+  const [isPersonalBalanceOpen, setIsPersonalBalanceOpen] = useState(false);
+  const [isSettleAllConfirmOpen, setIsSettleAllConfirmOpen] = useState(false);
+  const [personalBalanceSection, setPersonalBalanceSection] = useState("resumen");
+  const balanceTabRefs = useRef([]);
 
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
   const [tripNameDraft, setTripNameDraft] = useState("");
@@ -67,12 +86,27 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const [finalizeError, setFinalizeError] = useState("");
   const [isAddGastoOpen, setIsAddGastoOpen] = useState(false);
 
-  const isAdmin = useMemo(() => {
+  const [settlements, setSettlements] = useState([]);
+  const [settlementsError, setSettlementsError] = useState("");
+  const [isSettlementsLoading, setIsSettlementsLoading] = useState(false);
+  const [settleSuccessMessage, setSettleSuccessMessage] = useState("");
+  const [paymentTargetUserId, setPaymentTargetUserId] = useState("");
+  const [paymentAmountDraft, setPaymentAmountDraft] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [isPaymentSaving, setIsPaymentSaving] = useState(false);
+
+  const isOwner = useMemo(() => {
     if (!travel || !currentUser) return false;
     return travel.id_usuario_creador === currentUser.id_usuario;
   }, [travel, currentUser]);
+  const hasAdminRole = useMemo(() => {
+    if (!currentUser) return false;
+    return (userTravels ?? []).some(
+      (ut) => ut.id_usuario === currentUser.id_usuario && String(ut.rol ?? "").toLowerCase() === "admin",
+    );
+  }, [userTravels, currentUser]);
   const isClosed = useMemo(() => isTravelClosed(travel), [travel]);
-  const canEditTravel = isAdmin && !isClosed;
+  const canManageTravel = (isOwner || hasAdminRole) && !isClosed;
 
   const userById = useMemo(() => {
     return new Map((users ?? []).map((user) => [user.id_usuario, user]));
@@ -86,6 +120,11 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     const list = balance?.data?.usuarios ?? [];
     return new Map(list.map((entry) => [entry.id_usuario, entry]));
   }, [balance]);
+
+  const myBalanceEntry = useMemo(() => {
+    if (!currentUser) return null;
+    return balanceByUserId.get(currentUser.id_usuario) ?? null;
+  }, [balanceByUserId, currentUser]);
 
   const myBalance = useMemo(() => {
     if (!currentUser) return 0;
@@ -167,6 +206,38 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     refreshAll();
   }, [travelId]);
 
+  async function refreshSettlements() {
+    if (!currentUser || !travelId) return;
+    setIsSettlementsLoading(true);
+    setSettlementsError("");
+    try {
+      const response = await getTravelSettlements(travelId, currentUser.id_usuario);
+      const items = response?.data?.items ?? [];
+      setSettlements(items);
+
+      const defaultPayItem = items.find((i) => i.tipo === "pagar_a");
+      if (defaultPayItem) {
+        setPaymentTargetUserId(String(defaultPayItem.contraparte.id_usuario));
+        setPaymentAmountDraft(String(defaultPayItem.monto));
+      } else {
+        setPaymentTargetUserId("");
+        setPaymentAmountDraft("");
+      }
+    } catch (error) {
+      setSettlementsError(error.message);
+    } finally {
+      setIsSettlementsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!isPersonalBalanceOpen) return;
+    setPersonalBalanceSection("resumen");
+    setSettleSuccessMessage("");
+    setPaymentError("");
+    refreshSettlements();
+  }, [isPersonalBalanceOpen, travelId, currentUser?.id_usuario]);
+
   async function reloadTravelCategories() {
     const response = await listTravelCategories(currentUser?.id_usuario);
     setTravelCategories(response ?? []);
@@ -227,6 +298,138 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     }
   }
 
+  function formatAmountInput(value) {
+    const numeric = Number(String(value).replaceAll(",", "."));
+    if (!Number.isFinite(numeric)) return "";
+    return String(numeric);
+  }
+
+  function getPayItems() {
+    return (settlements ?? []).filter((item) => item.tipo === "pagar_a");
+  }
+
+  function getReceiveItems() {
+    return (settlements ?? []).filter((item) => item.tipo === "recibir_de");
+  }
+
+  const balanceTabs = useMemo(() => ["resumen", "saldar"], []);
+  const activeBalanceTabIndex = useMemo(() => {
+    const index = balanceTabs.indexOf(personalBalanceSection);
+    return index >= 0 ? index : 0;
+  }, [balanceTabs, personalBalanceSection]);
+
+  function setActiveBalanceTabIndex(nextIndex) {
+    const safeIndex = ((nextIndex % balanceTabs.length) + balanceTabs.length) % balanceTabs.length;
+    setPersonalBalanceSection(balanceTabs[safeIndex]);
+    setTimeout(() => {
+      const node = balanceTabRefs.current[safeIndex];
+      if (node && typeof node.focus === "function") node.focus();
+    }, 0);
+  }
+
+  function handleBalanceTabsKeyDown(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(activeBalanceTabIndex - 1);
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(activeBalanceTabIndex + 1);
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setActiveBalanceTabIndex(balanceTabs.length - 1);
+      return;
+    }
+  }
+
+  function getSelectedPayItem() {
+    const payItems = getPayItems();
+    const selectedId = Number(paymentTargetUserId);
+    return payItems.find((i) => i.contraparte.id_usuario === selectedId) ?? null;
+  }
+
+  async function handleRegisterPayment(event) {
+    event.preventDefault();
+    setPaymentError("");
+    setSettleSuccessMessage("");
+
+    if (!currentUser) return;
+
+    const selected = getSelectedPayItem();
+    if (!selected) {
+      setPaymentError("Selecciona a quién vas a pagar.");
+      return;
+    }
+
+    const amount = Number(formatAmountInput(paymentAmountDraft));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPaymentError("Ingresa un monto válido (mayor a 0).");
+      return;
+    }
+
+    const maxAmount = Number(selected.monto);
+    if (Number.isFinite(maxAmount) && amount > maxAmount + 0.000001) {
+      setPaymentError("El monto no puede ser mayor al monto sugerido para saldar.");
+      return;
+    }
+
+    try {
+      setIsPaymentSaving(true);
+      await createTravelPayment(travelId, {
+        id_usuario_from: currentUser.id_usuario,
+        id_usuario_to: selected.contraparte.id_usuario,
+        monto: amount,
+      });
+      setSettleSuccessMessage("Pago registrado. El balance se actualizó.");
+      await refreshAll();
+      await refreshSettlements();
+    } catch (error) {
+      setPaymentError(error.message);
+    } finally {
+      setIsPaymentSaving(false);
+    }
+  }
+
+  async function handleSettleAll() {
+    setPaymentError("");
+    setSettleSuccessMessage("");
+    if (!currentUser) return;
+
+    const payItems = getPayItems();
+    if (payItems.length === 0) {
+      setPaymentError("No hay deudas por saldar.");
+      return;
+    }
+
+    try {
+      setIsPaymentSaving(true);
+      for (const item of payItems) {
+        await createTravelPayment(travelId, {
+          id_usuario_from: currentUser.id_usuario,
+          id_usuario_to: item.contraparte.id_usuario,
+          monto: Number(item.monto),
+        });
+      }
+      setIsSettleAllConfirmOpen(false);
+      setSettleSuccessMessage("Pagos registrados. El balance se actualizó.");
+      await refreshAll();
+      await refreshSettlements();
+    } catch (error) {
+      setPaymentError(error.message);
+    } finally {
+      setIsPaymentSaving(false);
+    }
+  }
+
 
   return (
     <main className="travel-page" aria-labelledby="travel-title">
@@ -252,15 +455,24 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             ) : null}
           </div>
 
-          <div className="travel-actions">
-            <button className="secondary-button" type="button" onClick={refreshAll} disabled={isLoading}>
-              Actualizar
-            </button>
-            {canEditTravel ? (
-              <>
-                <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(true)}>
-                  Editar viaje
-                </button>
+        <div className="travel-actions">
+          <button className="secondary-button" type="button" onClick={refreshAll} disabled={isLoading}>
+            Actualizar
+          </button>
+          <button
+            aria-haspopup="dialog"
+            className="secondary-button"
+            type="button"
+            onClick={() => setIsPersonalBalanceOpen(true)}
+            disabled={isLoading}
+          >
+            Balance
+          </button>
+          {canManageTravel ? (
+            <>
+              <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(true)}>
+                Editar viaje
+              </button>
               </>
             ) : null}
           </div>
@@ -296,7 +508,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                 </div>
                 <p>Balance individual de cada participante.</p>
               </div>
-              {canEditTravel ? (
+              {canManageTravel ? (
                 <div className="panel-header-actions">
                   <button
                     className="primary-button"
@@ -309,21 +521,22 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
               ) : null}
             </div>
 
-            <div className="participant-table" role="table" aria-label="Tabla de participantes">
+            <div className="participant-table" role="table" aria-label="Tabla de participantes con balance">
               <div className="participant-row-head no-actions" role="row">
                 <span role="columnheader">Usuario</span>
                 <span role="columnheader">Balance</span>
               </div>
 
               {participantRows.map((row) => (
-                <div
-                  className="participant-row-item no-actions"
-                  role="row"
-                  key={row.id_usuario}
-                >
-                  <div role="cell">
-                    <strong>{row.nombre}</strong>
-                    {row.correo ? <div className="muted">{row.correo}</div> : null}
+                <div className="participant-row-item no-actions" role="row" key={row.id_usuario}>
+                  <div role="cell" className="participant-identity">
+                    <div className="participant-avatar" aria-hidden="true">
+                      {avatarLetter(row.nombre)}
+                    </div>
+                    <div>
+                      <strong>{row.nombre}</strong>
+                      {row.correo ? <div className="muted">{row.correo}</div> : null}
+                    </div>
                   </div>
                   <div role="cell" className={`participant-balance ${balanceClass(row.balance_final)}`}>
                     {formatCurrency(row.balance_final)}
@@ -374,7 +587,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
             )}
           </section>
 
-        {canEditTravel ? (
+        {canManageTravel ? (
           <div className="travel-footer">
             <button className="secondary-button" type="button" onClick={() => setIsFinalizeOpen(true)}>
               Finalizar viaje
@@ -414,6 +627,290 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         onCreated={async () => {
           await refreshAll();
         }}
+      />
+
+      <Modal
+        description="Consulta tu balance personal dentro de este viaje."
+        isOpen={isPersonalBalanceOpen}
+        onClose={() => setIsPersonalBalanceOpen(false)}
+        title="Mi balance"
+        footer={
+          <button className="primary-button" type="button" onClick={() => setIsPersonalBalanceOpen(false)}>
+            Cerrar
+          </button>
+        }
+      >
+        <div className="modal-form" aria-live="polite">
+          <p className="hint-text">
+            <strong>Viaje:</strong> {travel?.nombre ?? "—"}
+            <br />
+            <strong>Usuario:</strong> {currentUser?.nombre ?? "—"}
+          </p>
+
+          <div
+            className="balance-modal-tabs"
+            role="tablist"
+            aria-label="Secciones del balance"
+            onKeyDown={handleBalanceTabsKeyDown}
+          >
+            <button
+              className={`balance-modal-tab ${personalBalanceSection === "resumen" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              id="balance-tab-resumen"
+              aria-selected={personalBalanceSection === "resumen"}
+              aria-controls="balance-panel-resumen"
+              tabIndex={personalBalanceSection === "resumen" ? 0 : -1}
+              onClick={() => setPersonalBalanceSection("resumen")}
+              ref={(node) => {
+                balanceTabRefs.current[0] = node;
+              }}
+            >
+              Resumen
+            </button>
+            <button
+              className={`balance-modal-tab ${personalBalanceSection === "saldar" ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              id="balance-tab-saldar"
+              aria-selected={personalBalanceSection === "saldar"}
+              aria-controls="balance-panel-saldar"
+              tabIndex={personalBalanceSection === "saldar" ? 0 : -1}
+              onClick={() => setPersonalBalanceSection("saldar")}
+              ref={(node) => {
+                balanceTabRefs.current[1] = node;
+              }}
+            >
+              Saldar
+            </button>
+          </div>
+
+          {isLoading ? <p className="hint-text">Cargando balance…</p> : null}
+          {isSettlementsLoading ? <p className="hint-text">Calculando a quién pagar/recibir…</p> : null}
+
+          {settlementsError ? (
+            <p className="form-error" role="alert">
+              {settlementsError}
+            </p>
+          ) : null}
+
+          {settleSuccessMessage ? (
+            <p className="form-success" role="status">
+              {settleSuccessMessage}
+            </p>
+          ) : null}
+
+          {paymentError ? (
+            <p className="form-error" role="alert">
+              {paymentError}
+            </p>
+          ) : null}
+
+          {!isLoading && balance?.data?.usuarios?.length === 0 ? (
+            <p className="hint-text">Este viaje aún no tiene gastos registrados.</p>
+          ) : null}
+
+          {!isLoading && balance?.data?.usuarios?.length > 0 && !myBalanceEntry ? (
+            <p className="hint-text">No hay movimientos asociados a tu usuario en este viaje.</p>
+          ) : null}
+
+          <section
+            role="tabpanel"
+            id="balance-panel-resumen"
+            aria-labelledby="balance-tab-resumen"
+            hidden={personalBalanceSection !== "resumen"}
+            tabIndex={-1}
+          >
+            {personalBalanceSection === "resumen" ? (
+              <>
+              {!isLoading && myBalanceEntry ? (
+                <div className="personal-balance-grid" aria-label="Resumen de balance personal">
+                  <div className="personal-balance-row">
+                    <span>Total que yo pagué</span>
+                    <strong>{formatCurrency(myBalanceEntry.total_pagado)}</strong>
+                  </div>
+                  <div className="personal-balance-row">
+                    <span>Total que yo debo</span>
+                    <strong>{formatCurrency(myBalanceEntry.total_debido)}</strong>
+                  </div>
+                  <div className="personal-balance-row">
+                    <span>Mi balance</span>
+                    <strong className={balanceClass(myBalanceEntry.balance_final)}>
+                      {formatCurrency(myBalanceEntry.balance_final)}
+                    </strong>
+                  </div>
+
+                  <div className="personal-balance-status" role="status">
+                    {Number(myBalanceEntry.balance_final) < 0 ? (
+                      <p>
+                        <strong>Debes pagar</strong> {formatCurrency(Math.abs(Number(myBalanceEntry.balance_final)))} en
+                        este viaje.
+                      </p>
+                    ) : Number(myBalanceEntry.balance_final) > 0 ? (
+                      <p>
+                        <strong>Te deben</strong> {formatCurrency(Number(myBalanceEntry.balance_final))} en este viaje.
+                      </p>
+                    ) : (
+                      <p>No tienes deudas pendientes en este viaje.</p>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {!isSettlementsLoading ? (
+                <>
+                  <section className="settlement-panel" aria-label="Personas a las que debo">
+                    <h3 className="settlement-title">Personas a las que debo</h3>
+                    {getPayItems().length === 0 ? (
+                      <p className="hint-text">No tienes pagos pendientes por realizar.</p>
+                    ) : (
+                      <ul className="settlement-list" aria-label="Lista de personas a las que debo">
+                        {getPayItems().map((item) => (
+                          <li key={`pagar_a-${item.contraparte.id_usuario}`} className="settlement-item">
+                            <div>
+                              <strong>{item.contraparte.nombre}</strong>
+                              {item.contraparte.correo ? <div className="muted">{item.contraparte.correo}</div> : null}
+                            </div>
+                            <div className="settlement-amount">{formatCurrency(item.monto)}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+
+                  <section className="settlement-panel" aria-label="Personas que me deben">
+                    <h3 className="settlement-title">Personas que me deben</h3>
+                    {getReceiveItems().length === 0 ? (
+                      <p className="hint-text">No tienes cobros pendientes por recibir.</p>
+                    ) : (
+                      <ul className="settlement-list" aria-label="Lista de personas que me deben">
+                        {getReceiveItems().map((item) => (
+                          <li key={`recibir_de-${item.contraparte.id_usuario}`} className="settlement-item">
+                            <div>
+                              <strong>{item.contraparte.nombre}</strong>
+                              {item.contraparte.correo ? <div className="muted">{item.contraparte.correo}</div> : null}
+                            </div>
+                            <div className="settlement-amount">{formatCurrency(item.monto)}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </>
+              ) : null}
+              </>
+            ) : null}
+          </section>
+
+          <section
+            role="tabpanel"
+            id="balance-panel-saldar"
+            aria-labelledby="balance-tab-saldar"
+            hidden={personalBalanceSection !== "saldar"}
+            tabIndex={-1}
+          >
+            {personalBalanceSection === "saldar" ? (
+              <>
+              {!isSettlementsLoading && settlements?.length > 0 ? (
+                <section className="settlement-panel" aria-label="Desglose de liquidación personal">
+                  <h3 className="settlement-title">Desglose</h3>
+                  <ul className="settlement-list" aria-label="Lista de pagos sugeridos">
+                    {settlements.map((item) => (
+                      <li key={`${item.tipo}-${item.contraparte.id_usuario}`} className="settlement-item">
+                        <div>
+                          <strong>
+                            {item.tipo === "pagar_a" ? "Pagar a" : "Recibir de"} {item.contraparte.nombre}
+                          </strong>
+                          {item.contraparte.correo ? <div className="muted">{item.contraparte.correo}</div> : null}
+                        </div>
+                        <div className="settlement-amount">{formatCurrency(item.monto)}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              {!isSettlementsLoading ? (
+                <section className="settlement-panel" aria-label="Registrar pago">
+                  <h3 className="settlement-title">Saldar deudas</h3>
+                  {getPayItems().length === 0 ? (
+                    <p className="hint-text">No tienes pagos pendientes por registrar.</p>
+                  ) : (
+                    <>
+                      <p className="hint-text">Registra un pago para que el balance se actualice automáticamente.</p>
+
+                      <form className="settlement-form" onSubmit={handleRegisterPayment} noValidate>
+                        <div className="field">
+                          <label htmlFor="payment-target">¿A quién pagaste?</label>
+                          <select
+                            id="payment-target"
+                            name="payment-target"
+                            value={paymentTargetUserId}
+                            onChange={(event) => {
+                              setPaymentTargetUserId(event.target.value);
+                              const selected = (settlements ?? []).find(
+                                (i) => i.tipo === "pagar_a" && String(i.contraparte.id_usuario) === event.target.value
+                              );
+                              if (selected) {
+                                setPaymentAmountDraft(String(selected.monto));
+                              }
+                            }}
+                          >
+                            <option value="">Selecciona un participante</option>
+                            {getPayItems().map((item) => (
+                              <option key={item.contraparte.id_usuario} value={item.contraparte.id_usuario}>
+                                {item.contraparte.nombre} ({formatCurrency(item.monto)})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <TextInput
+                          id="payment-amount"
+                          label="Monto pagado"
+                          inputMode="decimal"
+                          onChange={(event) => setPaymentAmountDraft(event.target.value)}
+                          value={paymentAmountDraft}
+                        />
+
+                        <div className="settlement-actions">
+                          <button className="create-trip-button" type="submit" disabled={isPaymentSaving}>
+                            Registrar pago
+                          </button>
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={() => setIsSettleAllConfirmOpen(true)}
+                            disabled={isPaymentSaving}
+                          >
+                            Registrar todos
+                          </button>
+                        </div>
+                      </form>
+                    </>
+                  )}
+                </section>
+              ) : null}
+              </>
+            ) : null}
+          </section>
+
+          <p className="hint-text">
+            Tip: el balance de todos se muestra en la sección Participantes.
+          </p>
+        </div>
+      </Modal>
+
+      <ConfirmDialog
+        isOpen={isSettleAllConfirmOpen}
+        title="Registrar todos los pagos"
+        description="Se registrarán pagos por los montos sugeridos para saldar tu deuda. ¿Deseas continuar?"
+        confirmLabel="Sí, registrar"
+        cancelLabel="Cancelar"
+        onCancel={() => setIsSettleAllConfirmOpen(false)}
+        onConfirm={handleSettleAll}
+        isLoading={isPaymentSaving}
+        tone="primary"
       />
 
       <Modal
@@ -520,4 +1017,3 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     </main>
   );
 }
-
