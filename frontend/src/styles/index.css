@@ -280,6 +280,112 @@ button:disabled {
   align-items: center;
 }
 
+.division-panel {
+  background: var(--surface);
+}
+
+.division-panel-heading {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.division-panel-heading h3 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 18px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.division-panel-heading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.division-subtitle {
+  margin: 0 0 10px;
+  color: var(--primary);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.division-option-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.division-type-card {
+  position: relative;
+  display: grid;
+  min-height: 128px;
+  gap: 7px;
+  align-content: center;
+  justify-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 12px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.division-type-card:hover,
+.division-type-card.active {
+  border-color: var(--primary);
+  box-shadow: 0 12px 28px rgba(0, 121, 97, 0.12);
+}
+
+.division-type-card.active {
+  background: linear-gradient(180deg, rgba(0, 121, 97, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.division-type-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.division-type-card strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.division-type-card > span:not(.division-type-check):not(.division-type-icon) {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.division-type-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: none;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  font-weight: 850;
+}
+
+.division-type-card.active .division-type-check {
+  display: grid;
+}
+
+.division-type-icon {
+  display: block;
+  width: 42px;
+  height: 42px;
+  color: var(--primary);
+}
+
 .division-editor {
   margin-top: 12px;
   border: 1px solid var(--border);
@@ -312,36 +418,59 @@ button:disabled {
 .saved-division-list-panel {
   display: grid;
   gap: 10px;
-  margin: 12px 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  background: var(--surface);
+  margin: 26px 0 14px;
 }
 
-.saved-division-list-heading {
+.saved-division-list-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: var(--surface);
   color: var(--primary);
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 850;
+  text-align: left;
   text-transform: uppercase;
+}
+
+.saved-division-list-toggle:hover {
+  border-color: var(--primary);
+  background: rgba(0, 121, 97, 0.05);
+}
+
+.saved-division-toggle-icon {
+  color: var(--primary);
+  font-size: 18px;
+  line-height: 1;
 }
 
 .saved-division-list {
   display: grid;
-  gap: 8px;
+  gap: 0;
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   list-style: none;
 }
 
 .saved-division-row {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
   align-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  background: var(--surface-muted);
+  padding: 16px;
+  background: var(--surface);
+}
+
+.saved-division-row + .saved-division-row {
+  border-top: 1px solid var(--border);
 }
 
 .saved-division-row strong,
@@ -355,9 +484,15 @@ button:disabled {
   font-size: 12px;
 }
 
+.saved-division-count {
+  color: var(--text-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .saved-division-actions {
   display: inline-flex;
-  gap: 8px;
+  gap: 16px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -1664,6 +1799,18 @@ button:disabled {
   .saved-division-row,
   .save-division-controls {
     grid-template-columns: 1fr;
+  }
+
+  .division-option-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .division-type-card {
+    min-height: 122px;
+  }
+
+  .saved-division-count {
+    white-space: normal;
   }
 
   .saved-division-actions {

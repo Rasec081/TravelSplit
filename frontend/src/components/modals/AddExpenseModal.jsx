@@ -90,6 +90,34 @@ function writeStoredDivisionPresets(scopeKey, presets) {
   window.localStorage.setItem(DIVISION_PRESETS_STORAGE_KEY, JSON.stringify(stored));
 }
 
+function DivisionTypeIcon({ type }) {
+  if (type === "shares") {
+    return (
+      <svg aria-hidden="true" className="division-type-icon" fill="none" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="17" stroke="currentColor" strokeWidth="3" />
+        <path d="M24 7v17h17" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+      </svg>
+    );
+  }
+
+  if (type === "custom") {
+    return (
+      <svg aria-hidden="true" className="division-type-icon" fill="none" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="3" />
+        <circle cx="24" cy="18" r="6" stroke="currentColor" strokeWidth="3" />
+        <path d="M13 36c2.2-7 7-10 11-10s8.8 3 11 10" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" className="division-type-icon" fill="none" viewBox="0 0 48 48">
+      <circle cx="24" cy="14" r="6" stroke="currentColor" strokeWidth="3" />
+      <path d="M12 36c1.8-7.4 6.2-11 12-11s10.2 3.6 12 11" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+    </svg>
+  );
+}
+
 export function AddExpenseModal({
   isOpen,
   onClose,
@@ -126,6 +154,7 @@ export function AddExpenseModal({
   const [divisionPresetName, setDivisionPresetName] = useState("");
   const [editingPresetId, setEditingPresetId] = useState("");
   const [divisionPresetError, setDivisionPresetError] = useState("");
+  const [isSavedDivisionsOpen, setIsSavedDivisionsOpen] = useState(false);
 
   const participantById = useMemo(() => {
     return new Map((participants ?? []).map((p) => [p.id_usuario, p]));
@@ -161,6 +190,7 @@ export function AddExpenseModal({
     setDivisionPresetName("");
     setEditingPresetId("");
     setDivisionPresetError("");
+    setIsSavedDivisionsOpen(false);
 
     const defaultPayer = currentUser?.id_usuario ?? "";
     setPagadorId(defaultPayer);
@@ -736,17 +766,21 @@ export function AddExpenseModal({
                 </div>
               </section>
 
-              <fieldset className="modal-fieldset">
+              <fieldset className="modal-fieldset division-panel">
                 <legend>División</legend>
-                <p className="hint-text">{divisionHelp}</p>
+                <div className="division-panel-heading">
+                  <h3>Dividir monto</h3>
+                  <p>{divisionHelp}</p>
+                </div>
                 {errors.division ? (
                   <p className="field-error" role="alert">
                     {errors.division}
                   </p>
                 ) : null}
 
-                <div className="radio-grid" role="radiogroup" aria-label="Tipo de división">
-                  <label className="radio-row">
+                <h4 className="division-subtitle">Divisiones rápidas</h4>
+                <div className="division-option-grid" role="radiogroup" aria-label="Tipo de división">
+                  <label className={`division-type-card ${divisionType === "equal" ? "active" : ""}`}>
                     <input
                       type="radio"
                       name="division-type"
@@ -754,9 +788,12 @@ export function AddExpenseModal({
                       checked={divisionType === "equal"}
                       onChange={() => setDivisionType("equal")}
                     />
-                    <span>División igualitaria</span>
+                    <span className="division-type-check" aria-hidden="true">✓</span>
+                    <DivisionTypeIcon type="equal" />
+                    <strong>División igualitaria</strong>
+                    <span>Divide el monto por igual entre los participantes.</span>
                   </label>
-                  <label className="radio-row">
+                  <label className={`division-type-card ${divisionType === "shares" ? "active" : ""}`}>
                     <input
                       type="radio"
                       name="division-type"
@@ -764,9 +801,12 @@ export function AddExpenseModal({
                       checked={divisionType === "shares"}
                       onChange={() => setDivisionType("shares")}
                     />
-                    <span>División por partes o porcentajes</span>
+                    <span className="division-type-check" aria-hidden="true">✓</span>
+                    <DivisionTypeIcon type="shares" />
+                    <strong>División por partes o porcentajes</strong>
+                    <span>Divide el monto por porcentajes o partes específicas.</span>
                   </label>
-                  <label className="radio-row">
+                  <label className={`division-type-card ${divisionType === "custom" ? "active" : ""}`}>
                     <input
                       type="radio"
                       name="division-type"
@@ -774,45 +814,65 @@ export function AddExpenseModal({
                       checked={divisionType === "custom"}
                       onChange={() => setDivisionType("custom")}
                     />
-                    <span>División personalizada</span>
+                    <span className="division-type-check" aria-hidden="true">✓</span>
+                    <DivisionTypeIcon type="custom" />
+                    <strong>División personalizada</strong>
+                    <span>Asigna un monto específico a cada participante.</span>
                   </label>
                 </div>
 
                 <div className="saved-division-list-panel" aria-label="Divisiones de gasto guardadas">
-                  <div className="saved-division-list-heading">
-                    <strong>Divisiones guardadas</strong>
-                  </div>
-                  {divisionPresets.length > 0 ? (
-                    <ul className="saved-division-list">
-                      {divisionPresets.map((preset) => (
-                        <li key={preset.id} className="saved-division-row">
-                          <div>
-                            <strong>{preset.name}</strong>
-                            <span>
-                              {preset.divisionType === "custom"
-                                ? "División personalizada"
-                                : preset.sharesMode === "percent"
-                                  ? "División por porcentajes"
-                                  : "División por partes"}
-                            </span>
-                          </div>
-                          <div className="saved-division-actions">
-                            <button type="button" onClick={() => handleApplyDivisionPreset(preset)}>
-                              Aplicar
-                            </button>
-                            <button type="button" onClick={() => handleApplyDivisionPreset(preset, { edit: true })}>
-                              Editar
-                            </button>
-                            <button type="button" onClick={() => handleDeleteDivisionPreset(preset.id)}>
-                              Eliminar
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="hint-text">Aún no hay divisiones guardadas para este viaje.</p>
-                  )}
+                  <button
+                    className="saved-division-list-toggle"
+                    type="button"
+                    onClick={() => setIsSavedDivisionsOpen((current) => !current)}
+                    aria-expanded={isSavedDivisionsOpen}
+                    aria-controls="saved-division-list-content"
+                  >
+                    <span>Mis divisiones guardadas</span>
+                    <span className="saved-division-toggle-icon" aria-hidden="true">
+                      {isSavedDivisionsOpen ? "▴" : "▾"}
+                    </span>
+                  </button>
+                  {isSavedDivisionsOpen ? (
+                    <div id="saved-division-list-content">
+                      {divisionPresets.length > 0 ? (
+                        <ul className="saved-division-list">
+                          {divisionPresets.map((preset) => (
+                            <li key={preset.id} className="saved-division-row">
+                              <div>
+                                <strong>{preset.name}</strong>
+                                <span>
+                                  {preset.divisionType === "custom"
+                                    ? "División personalizada"
+                                    : preset.sharesMode === "percent"
+                                      ? "División por porcentajes"
+                                      : "División por partes"}
+                                </span>
+                              </div>
+                              <span className="saved-division-count">
+                                {preset.participantIds?.length ?? 0}{" "}
+                                {(preset.participantIds?.length ?? 0) === 1 ? "participante" : "participantes"}
+                              </span>
+                              <div className="saved-division-actions">
+                                <button type="button" onClick={() => handleApplyDivisionPreset(preset)}>
+                                  Aplicar
+                                </button>
+                                <button type="button" onClick={() => handleApplyDivisionPreset(preset, { edit: true })}>
+                                  Editar
+                                </button>
+                                <button type="button" onClick={() => handleDeleteDivisionPreset(preset.id)}>
+                                  Eliminar
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="hint-text">Aún no hay divisiones guardadas para este viaje.</p>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
 
                 {divisionType === "shares" ? (

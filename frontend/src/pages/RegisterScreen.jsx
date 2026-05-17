@@ -12,7 +12,7 @@ const initialFormData = {
   confirmPassword: "",
 };
 
-export function RegisterScreen({ goTo, onLogin }) {
+export function RegisterScreen({ goTo }) {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,13 +73,12 @@ export function RegisterScreen({ goTo, onLogin }) {
 
     try {
       setIsSubmitting(true);
-      const response = await registerUser({
+      await registerUser({
         nombre: fullName,
         correo: normalizedEmail,
         contrasena: formData.password,
       });
-      onLogin(response.data);
-      goTo(views.home);
+      goTo(views.login);
     } catch (error) {
       setErrors({ form: error.message });
     } finally {
