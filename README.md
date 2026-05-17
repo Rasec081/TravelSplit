@@ -233,4 +233,4 @@ TravelSplit prioriza:
 
 ## Estado actual del Proyecto
 
-El proyecto cuenta con módulos funcionales para autenticación, viajes, participantes, gastos, categorías, divisiones de gasto y balances. También se han incorporado mejoras de accesibilidad, manejo de variables de entorno desde la raíz y soporte para ejecución local o mediante reenvío de puertos.
+El proyecto cuenta con módulos funcionales para autenticación, viajes, participantes, gastos, categorías, divisiones de gasto y balances. También se han incorporado mejoras de accesibilidad.
