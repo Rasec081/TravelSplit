@@ -71,6 +71,25 @@ function splitCentsEvenly(totalCents, userIds) {
   }));
 }
 
+const DIVISION_PRESETS_STORAGE_KEY = "travelsplit_division_presets";
+
+function getPresetScopeKey(travelId, userId) {
+  return `${travelId ?? "travel"}:${userId ?? "user"}`;
+}
+
+function readStoredDivisionPresets(scopeKey) {
+  const raw = window.localStorage.getItem(DIVISION_PRESETS_STORAGE_KEY);
+  const stored = raw ? JSON.parse(raw) : {};
+  return Array.isArray(stored[scopeKey]) ? stored[scopeKey] : [];
+}
+
+function writeStoredDivisionPresets(scopeKey, presets) {
+  const raw = window.localStorage.getItem(DIVISION_PRESETS_STORAGE_KEY);
+  const stored = raw ? JSON.parse(raw) : {};
+  stored[scopeKey] = presets;
+  window.localStorage.setItem(DIVISION_PRESETS_STORAGE_KEY, JSON.stringify(stored));
+}
+
 export function AddExpenseModal({
   isOpen,
   onClose,
@@ -83,6 +102,7 @@ export function AddExpenseModal({
 }) {
   const statusId = useId();
   const isSubmittingRef = useRef(false);
+  const skipNextShareSyncRef = useRef(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [errors, setErrors] = useState({});
   const [step, setStep] = useState(1); // 1 datos, 2 división
@@ -102,6 +122,10 @@ export function AddExpenseModal({
 
   const [isSaving, setIsSaving] = useState(false);
   const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
+  const [divisionPresets, setDivisionPresets] = useState([]);
+  const [divisionPresetName, setDivisionPresetName] = useState("");
+  const [editingPresetId, setEditingPresetId] = useState("");
+  const [divisionPresetError, setDivisionPresetError] = useState("");
 
   const participantById = useMemo(() => {
     return new Map((participants ?? []).map((p) => [p.id_usuario, p]));
@@ -116,6 +140,8 @@ export function AddExpenseModal({
   const selectedParticipantCountLabel = `${selectedParticipantIds.length} ${
     selectedParticipantIds.length === 1 ? "seleccionado" : "seleccionados"
   }`;
+  const presetScopeKey = getPresetScopeKey(travelId, currentUser?.id_usuario);
+  const canUseDivisionPresets = divisionType === "shares" || divisionType === "custom";
 
   useEffect(() => {
     if (!isOpen) return;
@@ -132,11 +158,25 @@ export function AddExpenseModal({
     setLastSyncedParticipantKey("");
     setShares({});
     setCustomAmounts({});
+    setDivisionPresetName("");
+    setEditingPresetId("");
+    setDivisionPresetError("");
 
     const defaultPayer = currentUser?.id_usuario ?? "";
     setPagadorId(defaultPayer);
     setSelectedParticipantIds(travelParticipantIds);
   }, [isOpen, currentUser, travelParticipantIds]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    try {
+      setDivisionPresets(readStoredDivisionPresets(presetScopeKey));
+    } catch {
+      setDivisionPresets([]);
+      setDivisionPresetError("No se pudieron cargar las divisiones guardadas.");
+    }
+  }, [isOpen, presetScopeKey]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -155,6 +195,14 @@ export function AddExpenseModal({
     const modeChanged = lastSyncedSharesMode !== sharesMode;
     const participantsChanged = lastSyncedParticipantKey !== selectedParticipantKey;
     const defaultValue = sharesMode === "parts" ? "1" : defaultPercentFor(selectedParticipantIds.length);
+
+    if (skipNextShareSyncRef.current) {
+      skipNextShareSyncRef.current = false;
+      setLastSyncedSharesMode(sharesMode);
+      setLastSyncedParticipantKey(selectedParticipantKey);
+      return;
+    }
+
     setShares((current) => {
       const nextShares = {};
 
@@ -202,6 +250,87 @@ export function AddExpenseModal({
       ...current,
       [id]: sanitizeDecimalInput(value),
     }));
+  }
+
+  function persistDivisionPresets(nextPresets) {
+    setDivisionPresets(nextPresets);
+    writeStoredDivisionPresets(presetScopeKey, nextPresets);
+  }
+
+  function buildCurrentPreset() {
+    const participantIds = selectedParticipantIds.map(Number).filter(Boolean);
+    const values = {};
+
+    for (const id of participantIds) {
+      if (divisionType === "shares") {
+        values[id] = shares[id] ?? "";
+      } else if (divisionType === "custom") {
+        values[id] = customAmounts[id] ?? "";
+      }
+    }
+
+    return {
+      divisionType,
+      sharesMode,
+      participantIds,
+      values,
+    };
+  }
+
+  function handleSaveDivisionPreset() {
+    const name = divisionPresetName.trim();
+
+    if (!canUseDivisionPresets) {
+      setDivisionPresetError("Selecciona partes, porcentajes o división personalizada.");
+      return;
+    }
+    if (!name) {
+      setDivisionPresetError("Ingresa un nombre para guardar la división.");
+      return;
+    }
+    if (selectedParticipantIds.length === 0) {
+      setDivisionPresetError("Selecciona al menos un participante.");
+      return;
+    }
+
+    const preset = {
+      id: editingPresetId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      name,
+      ...buildCurrentPreset(),
+    };
+    const nextPresets = editingPresetId
+      ? divisionPresets.map((item) => (item.id === editingPresetId ? preset : item))
+      : [...divisionPresets, preset];
+
+    persistDivisionPresets(nextPresets);
+    setDivisionPresetName("");
+    setEditingPresetId("");
+    setDivisionPresetError("");
+  }
+
+  function handleApplyDivisionPreset(preset, { edit = false } = {}) {
+    setDivisionType(preset.divisionType);
+    setSelectedParticipantIds(preset.participantIds ?? []);
+    setDivisionPresetError("");
+    setDivisionPresetName(edit ? preset.name : "");
+    setEditingPresetId(edit ? preset.id : "");
+
+    if (preset.divisionType === "shares") {
+      skipNextShareSyncRef.current = true;
+      setSharesMode(preset.sharesMode ?? "parts");
+      setShares(preset.values ?? {});
+    }
+    if (preset.divisionType === "custom") {
+      setCustomAmounts(preset.values ?? {});
+    }
+  }
+
+  function handleDeleteDivisionPreset(presetId) {
+    persistDivisionPresets(divisionPresets.filter((preset) => preset.id !== presetId));
+    if (editingPresetId === presetId) {
+      setEditingPresetId("");
+      setDivisionPresetName("");
+    }
   }
 
   function getErrors() {
@@ -649,6 +778,43 @@ export function AddExpenseModal({
                   </label>
                 </div>
 
+                <div className="saved-division-list-panel" aria-label="Divisiones de gasto guardadas">
+                  <div className="saved-division-list-heading">
+                    <strong>Divisiones guardadas</strong>
+                  </div>
+                  {divisionPresets.length > 0 ? (
+                    <ul className="saved-division-list">
+                      {divisionPresets.map((preset) => (
+                        <li key={preset.id} className="saved-division-row">
+                          <div>
+                            <strong>{preset.name}</strong>
+                            <span>
+                              {preset.divisionType === "custom"
+                                ? "División personalizada"
+                                : preset.sharesMode === "percent"
+                                  ? "División por porcentajes"
+                                  : "División por partes"}
+                            </span>
+                          </div>
+                          <div className="saved-division-actions">
+                            <button type="button" onClick={() => handleApplyDivisionPreset(preset)}>
+                              Aplicar
+                            </button>
+                            <button type="button" onClick={() => handleApplyDivisionPreset(preset, { edit: true })}>
+                              Editar
+                            </button>
+                            <button type="button" onClick={() => handleDeleteDivisionPreset(preset.id)}>
+                              Eliminar
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="hint-text">Aún no hay divisiones guardadas para este viaje.</p>
+                  )}
+                </div>
+
                 {divisionType === "shares" ? (
                   <div className="division-editor" aria-label="Asignación por partes o porcentajes">
                     <fieldset className="inline-fieldset">
@@ -727,6 +893,32 @@ export function AddExpenseModal({
                       })}
                     </div>
                     <p className="hint-text">Puedes dejar un monto en 0 para omitir a un participante.</p>
+                  </div>
+                ) : null}
+
+                {canUseDivisionPresets ? (
+                  <div className="save-division-compact">
+                    <label htmlFor="division-preset-name">Guardar esta división</label>
+                    <div className="save-division-controls">
+                      <input
+                        id="division-preset-name"
+                        type="text"
+                        value={divisionPresetName}
+                        onChange={(event) => {
+                          setDivisionPresetName(event.target.value);
+                          setDivisionPresetError("");
+                        }}
+                        placeholder="Ej: Solo César y Daniel"
+                      />
+                      <button className="secondary-button" type="button" onClick={handleSaveDivisionPreset}>
+                        {editingPresetId ? "Actualizar" : "Guardar"}
+                      </button>
+                    </div>
+                    {divisionPresetError ? (
+                      <p className="field-error" role="alert">
+                        {divisionPresetError}
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </fieldset>

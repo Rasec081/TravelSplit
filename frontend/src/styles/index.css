@@ -309,6 +309,104 @@ button:disabled {
   align-items: center;
 }
 
+.saved-division-list-panel {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  background: var(--surface);
+}
+
+.saved-division-list-heading {
+  color: var(--primary);
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.saved-division-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saved-division-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  background: var(--surface-muted);
+}
+
+.saved-division-row strong,
+.saved-division-row span {
+  display: block;
+}
+
+.saved-division-row span {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.saved-division-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.saved-division-actions button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.saved-division-actions button:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.save-division-compact {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.save-division-compact label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.save-division-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.save-division-controls input,
+.save-division-controls button {
+  min-height: 38px;
+}
+
+.save-division-controls button {
+  padding: 0 16px;
+}
+
 .expense-division-layout {
   display: grid;
   gap: 14px;
@@ -1560,6 +1658,16 @@ button:disabled {
 
   .participant-row-item .secondary-button {
     width: 100%;
+  }
+
+  .division-row,
+  .saved-division-row,
+  .save-division-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-division-actions {
+    justify-content: flex-start;
   }
 
   .dashboard-hero {
