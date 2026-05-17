@@ -1,11 +1,13 @@
 from collections.abc import Generator
 from os import getenv
+from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-load_dotenv()
+ROOT_ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
+load_dotenv(ROOT_ENV_PATH)
 
 DATABASE_URL = getenv("DATABASE_URL")
 

@@ -14,7 +14,7 @@ class Travel(Base):
     id_categoria: Mapped[int | None] = mapped_column(ForeignKey("categorias.id_categoria"), nullable=True)
     id_usuario_creador: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    fecha_cierre: Mapped[datetime | None] = mapped_column(DateTime, default=datetime.utcnow, nullable=True)
+    fecha_cierre: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class UserTravel(Base):

@@ -55,8 +55,11 @@ def create_user(db: Session, user_data: UserCreate) -> User:
     except IntegrityError as exc:
         db.rollback()
         raise UserConflictError(
-            "No se pudo crear el usuario porque el correo ya esta registrado."
+            "No se pudo crear el usuario porque el correo ya está registrado."
         ) from exc
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise
 
 
 def authenticate_user(db: Session, login_data: UserLogin) -> User:
@@ -69,7 +72,7 @@ def authenticate_user(db: Session, login_data: UserLogin) -> User:
         )
 
     if not verify_password(login_data.contrasena, user.contrasena):
-        raise InvalidCredentialsError("Correo o contrasena incorrectos.")
+        raise InvalidCredentialsError("Correo o contraseña incorrectos.")
 
     return user
 
@@ -117,7 +120,7 @@ def confirm_password_reset(db: Session, reset_data: PasswordResetConfirm) -> Non
         or reset_token.used
         or reset_token.expires_at < datetime.utcnow()
     ):
-        raise PasswordResetError("El enlace de recuperacion no es valido o ya vencio.")
+        raise PasswordResetError("El enlace de recuperación no es válido o ya venció.")
 
     user = get_user_by_id(db, reset_token.id_usuario)
     if not user:
@@ -158,11 +161,18 @@ def update_user(db: Session, user: User, user_data: UserUpdate) -> User:
         raise UserConflictError(
             "No se pudo actualizar el usuario con los datos enviados."
         ) from exc
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def delete_user(db: Session, user: User) -> None:
     db.delete(user)
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def _hash_reset_token(token: str) -> str:

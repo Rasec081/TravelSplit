@@ -115,7 +115,7 @@ def _validate_gasto_payload(
         raise GastoValidationError("El monto debe ser mayor que cero.")
 
     if not descripcion.strip():
-        raise GastoValidationError("La descripcion no puede estar vacia.")
+        raise GastoValidationError("La descripción no puede estar vacía.")
 
     _validate_viaje_exists(db, id_viaje)
     _validate_usuario_exists(db, id_usuario)
@@ -136,7 +136,7 @@ def _validate_usuario_exists(db: Session, id_usuario: int) -> None:
 
 def _validate_categoria_exists(db: Session, id_categoria: int) -> None:
     if not _record_exists(db, "categorias", "id_categoria", id_categoria):
-        raise GastoNotFoundError("Categoria no encontrada.")
+        raise GastoNotFoundError("Categoría no encontrada.")
 
 
 def _record_exists(db: Session, table_name: str, id_column: str, id_value: int) -> bool:

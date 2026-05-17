@@ -6,7 +6,7 @@ Backend profesional con FastAPI, SQLAlchemy ORM, PostgreSQL y Pydantic.
 Ejecucion local
 ---------------
 
-1. Configura `backend/.env` con la contrasena real de PostgreSQL:
+1. Configura `backend/.env` con la contraseña real de PostgreSQL:
 
 ```env
 DATABASE_URL=postgresql://postgres:PASSWORD@localhost:5432/travelsplit
@@ -34,9 +34,9 @@ Estructura
 - `app/database/connection.py`: crea `engine`, `SessionLocal`, `Base` y `get_db()`.
 - `app/database/models/user_model.py`: modelo ORM de la tabla existente `usuarios`.
 - `app/schemas/user_schema.py`: schemas Pydantic para crear, actualizar y responder usuarios.
-- `app/services/user_service.py`: logica de negocio y operaciones CRUD con SQLAlchemy.
+- `app/services/user_service.py`: lógica de negocio y operaciones CRUD con SQLAlchemy.
 - `app/routes/user_routes.py`: endpoints `/usuarios`.
-- `app/utils/security.py`: hashing y verificacion de contrasenas para preparar auth futura.
+- `app/utils/security.py`: hashing y verificación de contraseñas para preparar autenticación futura.
 
 Endpoints iniciales
 -------------------

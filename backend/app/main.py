@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.database.init_db import init_db
 from app.routes.gasto_routes import router as gasto_router
 from app.routes.division_gasto_routes import router as division_gasto_router
 from app.routes.categorias_routes import router as categorias_router
@@ -13,7 +14,7 @@ from app.routes.user_routes import router as user_router
 
 app = FastAPI(
     title="TravelSplit API",
-    description="Backend de TravelSplit para gestion de usuarios, viajes y gastos compartidos.",
+    description="Backend de TravelSplit para gestión de usuarios, viajes y gastos compartidos.",
     version="0.1.0",
     openapi_tags=[
         {
@@ -51,6 +52,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
     ],
+    allow_origin_regex=r"https://.*\.devtunnels\.ms",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,6 +64,10 @@ app.include_router(travel_router)
 app.include_router(user_travel_router)
 app.include_router(gasto_router)
 app.include_router(division_gasto_router)
+
+@app.on_event("startup")
+def _startup_init_db() -> None:
+    init_db()
 
 
 @app.exception_handler(HTTPException)
@@ -91,7 +97,7 @@ async def validation_exception_handler(
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
-            "error": "Los datos enviados no son validos.",
+            "error": "Los datos enviados no son válidos.",
             "details": errors,
         },
     )
@@ -102,7 +108,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={
-            "error": "No se pudo completar la operacion en la base de datos. Intenta nuevamente."
+            "error": "No se pudo completar la operación en la base de datos. Intenta nuevamente."
         },
     )
 
@@ -111,7 +117,7 @@ async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> 
 async def unexpected_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": "Ocurrio un error inesperado. Intenta nuevamente."},
+        content={"error": "Ocurrió un error inesperado. Intenta nuevamente."},
     )
 
 

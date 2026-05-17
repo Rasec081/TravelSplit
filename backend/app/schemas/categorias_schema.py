@@ -21,7 +21,7 @@ class CategoriaBase(BaseModel):
 
 
 class CategoriaCreate(CategoriaBase):
-    pass
+    id_usuario: int | None = Field(default=None, gt=0)
 
 
 class CategoriaUpdate(BaseModel):
@@ -37,6 +37,7 @@ class CategoriaUpdate(BaseModel):
 
 class CategoriaResponse(CategoriaBase):
     id_categoria: int
+    id_usuario: int | None = None
 
     class Config:
         from_attributes = True

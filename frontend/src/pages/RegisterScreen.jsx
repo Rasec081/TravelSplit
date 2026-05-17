@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { PasswordInput } from "../components/forms/PasswordInput";
 import { TextInput } from "../components/forms/TextInput";
 import { views } from "../routes/views";
 import { registerUser } from "../services/authService";
@@ -15,7 +16,6 @@ const initialFormData = {
 export function RegisterScreen({ goTo }) {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateField(field, value) {
@@ -24,6 +24,20 @@ export function RegisterScreen({ goTo }) {
       [field]: value,
     }));
   }
+
+  useEffect(() => {
+    setErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+
+      if (formData.password && formData.confirmPassword && formData.confirmPassword !== formData.password) {
+        nextErrors.confirmPassword = "Las contraseñas no coinciden.";
+      } else if (nextErrors.confirmPassword === "Las contraseñas no coinciden.") {
+        delete nextErrors.confirmPassword;
+      }
+
+      return nextErrors;
+    });
+  }, [formData.password, formData.confirmPassword]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -37,23 +51,22 @@ export function RegisterScreen({ goTo }) {
     }
 
     if (!normalizedEmail) {
-      nextErrors.email = "Ingresa tu correo electronico.";
+      nextErrors.email = "Ingresa tu correo electrónico.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      nextErrors.email = "Ingresa un correo electronico valido.";
+      nextErrors.email = "Ingresa un correo electrónico válido.";
     }
 
     if (!formData.password) {
-      nextErrors.password = "Ingresa una contrasena.";
+      nextErrors.password = "Ingresa una contraseña.";
     } else if (formData.password.length < 8) {
-      nextErrors.password = "La contrasena debe tener al menos 8 caracteres.";
+      nextErrors.password = "La contraseña debe tener al menos 8 caracteres.";
     }
 
     if (formData.confirmPassword !== formData.password) {
-      nextErrors.confirmPassword = "Las contrasenas no coinciden.";
+      nextErrors.confirmPassword = "Las contraseñas no coinciden.";
     }
 
     setErrors(nextErrors);
-    setSuccessMessage("");
 
     if (Object.keys(nextErrors).length > 0) {
       return;
@@ -66,8 +79,7 @@ export function RegisterScreen({ goTo }) {
         correo: normalizedEmail,
         contrasena: formData.password,
       });
-      setSuccessMessage("Cuenta creada correctamente. Ya puedes iniciar sesion.");
-      setFormData(initialFormData);
+      goTo(views.login);
     } catch (error) {
       setErrors({ form: error.message });
     } finally {
@@ -76,22 +88,22 @@ export function RegisterScreen({ goTo }) {
   }
 
   return (
-    <main className="auth-page auth-page-register" aria-labelledby="register-title">
+    <main className="auth-page auth-page-register" id="contenido-principal" tabIndex={-1} aria-labelledby="register-title">
       <button className="back-link" type="button" onClick={() => goTo(views.login)}>
-        &larr; Regresar al inicio de sesion
+        &larr; Regresar al inicio de sesión
       </button>
 
       <section className="auth-card register-card">
         <h1 id="register-title">Crear perfil de usuario</h1>
         <p className="auth-intro">
-          Completa la informacion base para administrar viajes y distribuir gastos.
+          Completa la información básica para administrar viajes y distribuir gastos.
         </p>
 
         <form className="auth-form register-form" onSubmit={handleSubmit} noValidate>
           <div className="form-section">
             <div className="section-heading">
               <p className="form-section-title">Datos personales</p>
-              <span>Informacion visible para tu equipo de viaje.</span>
+              <span>Información visible para tu equipo de viaje.</span>
             </div>
             <div className="two-columns">
               <TextInput
@@ -100,13 +112,14 @@ export function RegisterScreen({ goTo }) {
                 label="Nombre"
                 onChange={(event) => updateField("name", event.target.value)}
                 placeholder="Juan"
+                required
                 value={formData.name}
               />
               <TextInput
                 id="register-lastname"
                 label="Apellido"
                 onChange={(event) => updateField("lastname", event.target.value)}
-                placeholder="Perez"
+                placeholder="Pérez"
                 value={formData.lastname}
               />
             </div>
@@ -114,9 +127,10 @@ export function RegisterScreen({ goTo }) {
             <TextInput
               error={errors.email}
               id="register-email"
-              label="Correo electronico"
+              label="Correo electrónico"
               onChange={(event) => updateField("email", event.target.value)}
-              placeholder="Juan@figma.com"
+              placeholder="Juan@example.com"
+              required
               type="email"
               value={formData.email}
             />
@@ -127,22 +141,24 @@ export function RegisterScreen({ goTo }) {
               <p className="form-section-title">Datos de acceso</p>
               <span>Credenciales para proteger tu cuenta.</span>
             </div>
-            <TextInput
+            <PasswordInput
+              autoComplete="new-password"
               error={errors.password}
               id="register-password"
-              label="Contrasena"
+              label="Contraseña"
               onChange={(event) => updateField("password", event.target.value)}
-              placeholder="Minimo 8 caracteres"
-              type="password"
+              placeholder="Mínimo 8 caracteres"
+              required
               value={formData.password}
             />
-            <TextInput
+            <PasswordInput
+              autoComplete="new-password"
               error={errors.confirmPassword}
               id="register-confirm-password"
-              label="Confirma tu contrasena"
+              label="Confirma tu contraseña"
               onChange={(event) => updateField("confirmPassword", event.target.value)}
-              placeholder="Contrasena"
-              type="password"
+              placeholder="Contraseña"
+              required
               value={formData.confirmPassword}
             />
           </div>
@@ -152,11 +168,6 @@ export function RegisterScreen({ goTo }) {
               {errors.form}
             </p>
           ) : null}
-          {successMessage ? (
-            <p className="form-success" role="status">
-              {successMessage}
-            </p>
-          ) : null}
 
           <button className="primary-button" disabled={isSubmitting} type="submit">
             {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}
@@ -164,9 +175,9 @@ export function RegisterScreen({ goTo }) {
         </form>
 
         <p className="secondary-text">
-          Ya tienes una cuenta?{" "}
+          ¿Ya tienes una cuenta?{" "}
           <button type="button" onClick={() => goTo(views.login)}>
-            Inicia sesion
+            Inicia sesión
           </button>
         </p>
       </section>

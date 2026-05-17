@@ -19,15 +19,15 @@ export function LoginScreen({ goTo, onLogin }) {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail) {
-      nextErrors.email = "Ingresa tu correo electronico.";
+      nextErrors.email = "Ingresa tu correo electrónico.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      nextErrors.email = "Ingresa un correo electronico valido.";
+      nextErrors.email = "Ingresa un correo electrónico válido.";
     }
 
     if (!password) {
-      nextErrors.password = "Ingresa tu contrasena.";
+      nextErrors.password = "Ingresa tu contraseña.";
     } else if (password.length < 8) {
-      nextErrors.password = "La contrasena debe tener al menos 8 caracteres.";
+      nextErrors.password = "La contraseña debe tener al menos 8 caracteres.";
     }
 
     setErrors(nextErrors);
@@ -52,7 +52,7 @@ export function LoginScreen({ goTo, onLogin }) {
   }
 
   return (
-    <main className="auth-page auth-page-login" aria-labelledby="login-title">
+    <main className="auth-page auth-page-login" id="contenido-principal" tabIndex={-1} aria-labelledby="login-title">
       <BrandHeader />
 
       <section className="auth-card login-card">
@@ -66,9 +66,10 @@ export function LoginScreen({ goTo, onLogin }) {
             autoComplete="email"
             error={errors.email}
             id="login-email"
-            label="Correo electronico"
+            label="Correo electrónico"
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="Ingresa tu correo electronico"
+            placeholder="Ingresa tu correo electrónico"
+            required
             type="email"
             value={email}
           />
@@ -76,9 +77,10 @@ export function LoginScreen({ goTo, onLogin }) {
             autoComplete="current-password"
             error={errors.password}
             id="login-password"
-            label="Contrasena"
+            label="Contraseña"
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="Ingresa tu contrasena"
+            placeholder="Ingresa tu contraseña"
+            required
             value={password}
           />
 
@@ -89,7 +91,7 @@ export function LoginScreen({ goTo, onLogin }) {
           ) : null}
 
           <button className="primary-button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Validando..." : "Iniciar sesion"}
+            {isSubmitting ? "Validando..." : "Iniciar sesión"}
           </button>
         </form>
 

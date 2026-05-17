@@ -38,7 +38,7 @@ def login_user(login_data: UserLogin, db: Session = Depends(get_db)) -> UserMess
     except InvalidCredentialsError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
 
-    return UserMessageResponse(message="Inicio de sesion correcto", data=user)
+    return UserMessageResponse(message="Inicio de sesión correcto", data=user)
 
 
 @router.post("/password-reset/request", response_model=UserMessageResponse)
@@ -48,7 +48,7 @@ def request_password_reset(
 ) -> UserMessageResponse:
     user_service.request_password_reset(db, reset_data)
     return UserMessageResponse(
-        message="Si el correo existe, enviaremos un enlace de recuperacion."
+        message="Si el correo existe, enviaremos un enlace de recuperación."
     )
 
 
@@ -62,7 +62,7 @@ def confirm_password_reset(
     except PasswordResetError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
-    return UserMessageResponse(message="Contrasena actualizada correctamente")
+    return UserMessageResponse(message="Contraseña actualizada correctamente")
 
 
 @router.get("", response_model=list[UserResponse])
@@ -76,7 +76,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)) -> UserResponse:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontro un usuario con ese identificador.",
+            detail="No se encontró un usuario con ese identificador.",
         )
     return user
 
@@ -91,7 +91,7 @@ def update_user(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontro un usuario con ese identificador.",
+            detail="No se encontró un usuario con ese identificador.",
         )
 
     try:
@@ -108,7 +108,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)) -> UserMessageRespo
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No se encontro un usuario con ese identificador.",
+            detail="No se encontró un usuario con ese identificador.",
         )
 
     user_service.delete_user(db, user)

@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -6,13 +7,17 @@ from app.schemas.categorias_schema import CategoriaCreate, CategoriaUpdate
 from app.services.exceptions import CategoriaConflictError
 
 '''
-aqui van los cruds y aqui es donde insertamos los datos en la db
+Aquí van los CRUD y se insertan los datos en la base de datos.
 '''
-def get_categorias(db: Session, tipo: str | None = None) -> list[Categoria]: 
-    #da la opcion de filtrar por tipo, por default van todas
+def get_categorias(db: Session, tipo: str | None = None, user_id: int | None = None) -> list[Categoria]:
+    # Da la opción de filtrar por tipo; por defecto se devuelven todas.
     query = db.query(Categoria)
     if tipo:
         query = query.filter(Categoria.tipo == tipo)
+    if user_id is not None:
+        query = query.filter(or_(Categoria.id_usuario.is_(None), Categoria.id_usuario == user_id))
+    else:
+        query = query.filter(Categoria.id_usuario.is_(None))
     return query.order_by(Categoria.id_categoria).all()
 
 
@@ -26,6 +31,7 @@ def create_categoria(db: Session, categoria_data: CategoriaCreate) -> Categoria:
     categoria = Categoria(
         nombre_categoria=categoria_data.nombre_categoria.strip(),
         tipo=categoria_data.tipo,
+        id_usuario=categoria_data.id_usuario,
     )
 
     try:

@@ -51,13 +51,13 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
     }
 
     if (!normalizedEmail) {
-      nextErrors.email = "Ingresa tu correo electronico.";
+      nextErrors.email = "Ingresa tu correo electrónico.";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      nextErrors.email = "Ingresa un correo electronico valido.";
+      nextErrors.email = "Ingresa un correo electrónico válido.";
     }
 
     if (formData.password && formData.password.length < 8) {
-      nextErrors.password = "La contrasena debe tener al menos 8 caracteres.";
+      nextErrors.password = "La contraseña debe tener al menos 8 caracteres.";
     }
 
     setErrors(nextErrors);
@@ -103,7 +103,7 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
   }
 
   return (
-    <main className="home-page profile-page" aria-labelledby="profile-title">
+    <main className="home-page profile-page" id="contenido-principal" tabIndex={-1} aria-labelledby="profile-title">
       <DashboardHeader
         activeView={views.profile}
         currentUser={currentUser}
@@ -115,14 +115,14 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
         <div className="profile-heading">
           <div>
             <p className="eyebrow">Perfil</p>
-            <h1 id="profile-title">Informacion personal</h1>
-            <p>Actualiza los datos de tu cuenta y la informacion visible en TravelSplit.</p>
+            <h1 id="profile-title">Información personal</h1>
+            <p>Actualiza los datos de tu cuenta y la información visible en TravelSplit.</p>
           </div>
         </div>
 
         <form className="profile-card" onSubmit={handleSubmit} noValidate>
           <div className="section-heading">
-            <p className="form-section-title">Informacion personal</p>
+            <p className="form-section-title">Información personal</p>
             <span>Estos datos ayudan a identificarte dentro de tus viajes compartidos.</span>
           </div>
 
@@ -139,7 +139,7 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
               id="profile-lastname"
               label="Apellido"
               onChange={(event) => updateField("lastname", event.target.value)}
-              placeholder="Perez"
+              placeholder="Pérez"
               value={formData.lastname}
             />
           </div>
@@ -147,7 +147,7 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
           <TextInput
             error={errors.email}
             id="profile-email"
-            label="Correo electronico"
+            label="Correo electrónico"
             onChange={(event) => updateField("email", event.target.value)}
             placeholder="juan@correo.com"
             type="email"
@@ -157,9 +157,9 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
           <PasswordInput
             error={errors.password}
             id="profile-password"
-            label="Contrasena"
+            label="Contraseña"
             onChange={(event) => updateField("password", event.target.value)}
-            placeholder="Ingresa una nueva contrasena"
+            placeholder="Ingresa una nueva contraseña"
             value={formData.password}
           />
 

@@ -18,12 +18,12 @@ export function ResetPasswordScreen({ goTo }) {
     setSuccessMessage("");
 
     if (!normalizedEmail) {
-      setError("Ingresa tu correo electronico.");
+      setError("Ingresa tu correo electrónico.");
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setError("Ingresa un correo electronico valido.");
+      setError("Ingresa un correo electrónico válido.");
       return;
     }
 
@@ -40,9 +40,9 @@ export function ResetPasswordScreen({ goTo }) {
   }
 
   return (
-    <main className="auth-page auth-page-reset" aria-labelledby="reset-title">
+    <main className="auth-page auth-page-reset" id="contenido-principal" tabIndex={-1} aria-labelledby="reset-title">
       <button className="back-link" type="button" onClick={() => goTo(views.login)}>
-        &larr; Regresar al inicio de sesion
+        &larr; Regresar al inicio de sesión
       </button>
 
       <section className="auth-card reset-card">
@@ -53,9 +53,10 @@ export function ResetPasswordScreen({ goTo }) {
           <TextInput
             error={error}
             id="reset-email"
-            label="Correo electronico"
+            label="Correo electrónico"
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="Ingresa tu correo electronico"
+            placeholder="Ingresa tu correo electrónico"
+            required
             type="email"
             value={email}
           />
@@ -67,12 +68,12 @@ export function ResetPasswordScreen({ goTo }) {
           ) : null}
 
           <button className="primary-button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Enviando..." : "Enviar correo de recuperacion"}
+            {isSubmitting ? "Enviando..." : "Enviar correo de recuperación"}
           </button>
         </form>
 
         <button className="reset-login-link" type="button" onClick={() => goTo(views.login)}>
-          Iniciar sesion
+          Iniciar sesión
         </button>
       </section>
     </main>
