@@ -988,10 +988,10 @@ export function AddExpenseModal({
                           setDivisionPresetName(event.target.value);
                           setDivisionPresetError("");
                         }}
-                        placeholder="Ej: Solo César y Daniel"
+                        placeholder="Ejemplo: Admin invita"
                       />
                       <button className="secondary-button" type="button" onClick={handleSaveDivisionPreset}>
-                        {editingPresetId ? "Actualizar" : "Guardar"}
+                        {editingPresetId ? "Actualizar balance" : "Guardar balance"}
                       </button>
                     </div>
                     {divisionPresetError ? (
