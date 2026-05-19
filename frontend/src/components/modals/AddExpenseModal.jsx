@@ -687,6 +687,7 @@ export function AddExpenseModal({
                     className="secondary-button"
                     type="button"
                     aria-haspopup="dialog"
+                    aria-label="Agregar nueva categoría de gasto"
                     onClick={() => setIsManageCategoriesOpen(true)}
                     disabled={isSaving}
                   >

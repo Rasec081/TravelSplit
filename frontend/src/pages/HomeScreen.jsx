@@ -142,9 +142,6 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
               <p>Listado de viajes disponibles para seguimiento y colaboración.</p>
             </div>
             <div className="panel-header-actions" aria-label="Acciones de viajes">
-              <button className="secondary-button" type="button" onClick={() => setIsCategoriesOpen(true)}>
-                Administrar categorías
-              </button>
               <button className="create-trip-button" type="button" onClick={() => setIsModalOpen(true)}>
                 <span aria-hidden="true">+</span>
                 Crear viaje

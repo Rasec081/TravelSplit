@@ -245,6 +245,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
               </select>
               <button
                 aria-haspopup="dialog"
+                aria-label="Agregar nueva categoría de viaje"
                 className="primary-button"
                 type="button"
                 onClick={() => setIsCategoriesOpen(true)}
