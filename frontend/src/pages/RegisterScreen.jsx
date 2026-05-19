@@ -102,7 +102,7 @@ export function RegisterScreen({ goTo }) {
         <form className="auth-form register-form" onSubmit={handleSubmit} noValidate>
           <div className="form-section">
             <div className="section-heading">
-              <p className="form-section-title">Datos personales</p>
+              <h2 className="form-section-title">Datos personales</h2>
               <span>Información visible para tu equipo de viaje.</span>
             </div>
             <div className="two-columns">
@@ -138,7 +138,7 @@ export function RegisterScreen({ goTo }) {
 
           <div className="form-section">
             <div className="section-heading">
-              <p className="form-section-title">Datos de acceso</p>
+              <h2 className="form-section-title">Datos de acceso</h2>
               <span>Credenciales para proteger tu cuenta.</span>
             </div>
             <PasswordInput

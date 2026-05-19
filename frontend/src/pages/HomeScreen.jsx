@@ -126,9 +126,12 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
         </div>
 
         <div className="metric-grid" aria-label="Resumen de viajes">
-          <article className="metric-card">
-            <span>Viajes registrados</span>
-            <strong>{travels.length}</strong>
+          <article
+            className="metric-card"
+            aria-label={`Viajes registrados: ${travels.length}`}
+          >
+            <span aria-hidden="true">Viajes registrados</span>
+            <strong aria-hidden="true">{travels.length}</strong>
           </article>
         </div>
 
@@ -180,7 +183,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
           </div>
 
           <section className="trip-table" aria-label="Lista de viajes" aria-busy={isLoading ? "true" : "false"}>
-            <div className="trip-table-row trip-table-head">
+            <div className="trip-table-row trip-table-head" aria-hidden="true">
               <span>Viaje</span>
               <span>Participantes</span>
               <span>Estado</span>
@@ -198,7 +201,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
             ) : null}
 
             {!isLoading && !loadError && filteredTravels.length === 0 ? (
-              <p className="hint-text empty-trips-message">
+              <p className="hint-text empty-trips-message" role="status">
                 No hay viajes para el filtro seleccionado.
               </p>
             ) : null}
@@ -216,7 +219,7 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
                   aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${status}. Presione Enter para abrir.`}
                 >
                   <div>
-                    <h3>{travel.nombre}</h3>
+                    <strong className="trip-row-name">{travel.nombre}</strong>
                     <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoría"}</p>
                   </div>
                   <span>{participantCounts[travel.id_travel] ?? 0}</span>

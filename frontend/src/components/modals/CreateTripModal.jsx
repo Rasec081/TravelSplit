@@ -320,14 +320,14 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
             )}
           </fieldset>
 
-          <footer className="modal-actions">
+          <div className="modal-actions">
             <button className="secondary-button" type="button" onClick={handleClose} disabled={isLoading}>
               Salir
             </button>
             <button className="create-trip-button" disabled={isLoading || isInitializing} type="submit">
               {isLoading ? "Creando..." : "Crear viaje"}
             </button>
-          </footer>
+          </div>
         </form>
       </Modal>
 

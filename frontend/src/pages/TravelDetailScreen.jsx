@@ -469,6 +469,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           </button>
           <button
             aria-haspopup="dialog"
+            aria-label="Ver mi balance personal"
             className="secondary-button"
             type="button"
             onClick={() => setIsPersonalBalanceOpen(true)}
@@ -492,18 +493,33 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           </p>
         ) : null}
 
-        <div className="metric-grid" aria-label="Resumen del viaje" aria-live="polite">
-          <article className="metric-card">
-            <span>Gastos totales</span>
-            <strong>{formatCurrency(totalGastos)}</strong>
+        <div className="metric-grid" aria-label="Resumen del viaje">
+          <article
+            className="metric-card"
+            aria-label={`Gastos totales: ${formatCurrency(totalGastos)}`}
+          >
+            <span aria-hidden="true">Gastos totales</span>
+            <strong aria-hidden="true">{formatCurrency(totalGastos)}</strong>
           </article>
-          <article className="metric-card">
-            <span>Balance grupal</span>
-            <strong className={balanceClass(groupDiff)}>{formatCurrency(groupDiff)}</strong>
+          <article
+            className="metric-card"
+            aria-label={`Balance grupal: ${formatCurrency(groupDiff)}`}
+          >
+            <span aria-hidden="true">Balance grupal</span>
+            <strong className={balanceClass(groupDiff)} aria-hidden="true">{formatCurrency(groupDiff)}</strong>
           </article>
-          <article className="metric-card">
-            <span>Mi balance</span>
-            <strong className={balanceClass(myBalance)}>{formatCurrency(myBalance)}</strong>
+          <article
+            className="metric-card"
+            aria-label={
+              Number(myBalance) > 0
+                ? `Mi balance: te deben ${formatCurrency(myBalance)}`
+                : Number(myBalance) < 0
+                  ? `Mi balance: debes ${formatCurrency(Math.abs(Number(myBalance)))}`
+                  : "Mi balance: saldado"
+            }
+          >
+            <span aria-hidden="true">Mi balance</span>
+            <strong className={balanceClass(myBalance)} aria-hidden="true">{formatCurrency(myBalance)}</strong>
           </article>
         </div>
 

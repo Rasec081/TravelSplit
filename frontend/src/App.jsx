@@ -105,5 +105,28 @@ export default function App() {
     setCurrentView(views.login);
   }
 
-  return renderView();
+  function handleSkipLink(event) {
+    event.preventDefault();
+    const target = document.getElementById("contenido-principal");
+    if (!target) return;
+    target.setAttribute("tabindex", "-1");
+    target.focus();
+    target.addEventListener(
+      "blur",
+      function handler() {
+        target.removeAttribute("tabindex");
+        target.removeEventListener("blur", handler);
+      },
+      { once: true },
+    );
+  }
+
+  return (
+    <>
+      <a className="skip-link" href="#contenido-principal" onClick={handleSkipLink}>
+        Saltar al contenido principal
+      </a>
+      {renderView()}
+    </>
+  );
 }

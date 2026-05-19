@@ -36,7 +36,12 @@ export function DashboardHeader({ activeView, currentUser, goTo, onLogout }) {
           </button>
         </nav>
         <div className="home-actions">
-          <button className="my-trips-button" type="button" onClick={() => goTo(views.profile)}>
+          <button
+            className="my-trips-button"
+            type="button"
+            onClick={() => goTo(views.profile)}
+            aria-label={`${currentUser?.nombre ?? "Mi cuenta"} — ir a perfil`}
+          >
             {currentUser?.nombre ?? "Mi cuenta"}
           </button>
           <button className="logout-button" type="button" onClick={onLogout}>
