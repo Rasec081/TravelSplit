@@ -203,26 +203,39 @@ export function HomeScreen({ currentUser, flashMessage, goTo, onLogout }) {
               </p>
             ) : null}
 
-            {filteredTravels.map((travel) => {
+            {filteredTravels.map((travel, index) => {
               const isClosed = isTravelClosed(travel);
               const status = statusByTravelId[travel.id_travel] ?? "Iniciado";
+              const participantCount = participantCounts[travel.id_travel] ?? 0;
+              const categoryName = categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoria";
+              const createdDate = formatDate(travel.fecha_creacion) || "Sin fecha";
+              const visual = tripVisualFor(index);
 
               return (
                 <button
                   key={travel.id_travel}
-                  className={`trip-table-row trip-row-button ${isClosed ? "trip-row-closed" : ""}`}
+                  className={`trip-card trip-row-button ${isClosed ? "trip-row-closed" : ""}`}
                   type="button"
                   onClick={() => goTo(views.travel, { travelId: travel.id_travel })}
-                  aria-label={`Viaje ${travel.nombre}, ${participantCounts[travel.id_travel] ?? 0} participantes, estado ${status}. Presione Enter para abrir.`}
+                  aria-label={`Viaje ${travel.nombre}, categoria ${categoryName}, ${participantCount} participantes, estado ${status}. Ver detalles.`}
                 >
-                  <div>
+                  <div className="trip-card-main">
                     <strong className="trip-row-name">{travel.nombre}</strong>
-                    <p>{categoryById.get(travel.id_categoria)?.nombre_categoria ?? "Sin categoría"}</p>
+                    <span className="trip-category-line">
+                      {categoryName}
+                    </span>
+                    <span className="trip-card-details">
+                      <span>{participantCount} {participantCount === 1 ? "participante" : "participantes"}</span>
+                      <span aria-hidden="true">•</span>
+                      <span>Creado el {createdDate}</span>
+                    </span>
                   </div>
-                  <span>{participantCounts[travel.id_travel] ?? 0}</span>
-                  <span className={`status-badge ${isClosed ? "status-badge-closed" : ""}`}>
-                    {status}
-                  </span>
+                  <div className="trip-card-actions">
+                    <span className={`status-badge ${isClosed ? "status-badge-closed" : ""}`}>
+                      <span className="status-dot" aria-hidden="true" />
+                      {status}
+                    </span>
+                  </div>
                 </button>
               );
             })}
@@ -256,3 +269,15 @@ function isTravelClosed(travel) {
 
   return closedAt - createdAt > 5000;
 }
+
+function formatDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("es-CR", { year: "numeric", month: "short", day: "2-digit" }).format(date);
+}
+
+function tripVisualFor(index) {
+  return ["palm", "beach", "backpack"][index % 3];
+}
+
