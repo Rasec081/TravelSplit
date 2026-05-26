@@ -3,6 +3,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database.models.categorias_model import Categoria
+from app.database.models.gasto_model import Gasto
+from app.database.models.travel_model import Travel
 from app.schemas.categorias_schema import CategoriaCreate, CategoriaUpdate
 from app.services.exceptions import CategoriaConflictError
 
@@ -73,7 +75,21 @@ def update_categoria(db: Session, categoria: Categoria, categoria_data: Categori
 
 def delete_categoria(db: Session, categoria: Categoria) -> None:
     """Elimina una categoría."""
-    db.delete(categoria)
-    db.commit()
+    try:
+        db.query(Travel).filter(Travel.id_categoria == categoria.id_categoria).update(
+            {Travel.id_categoria: None},
+            synchronize_session=False,
+        )
+        db.query(Gasto).filter(Gasto.id_categoria == categoria.id_categoria).update(
+            {Gasto.id_categoria: None},
+            synchronize_session=False,
+        )
+        db.delete(categoria)
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise CategoriaConflictError(
+            "No se pudo eliminar la categorÃ­a con los datos proporcionados."
+        ) from exc
 
 

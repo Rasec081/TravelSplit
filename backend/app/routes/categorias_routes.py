@@ -313,6 +313,11 @@ def update_categoria(
         ) from exc
     except HTTPException:
         raise
+    except CategoriaConflictError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
     except Exception as exc:
         print(f"[ERROR] Error inesperado al actualizar categoría: {str(exc)}")
         raise HTTPException(

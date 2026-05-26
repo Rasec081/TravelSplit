@@ -11,7 +11,10 @@ class Travel(Base):
 
     id_travel: Mapped[int] = mapped_column("id_viaje", primary_key=True, index=True)
     nombre: Mapped[str] = mapped_column(String(128), nullable=False)
-    id_categoria: Mapped[int | None] = mapped_column(ForeignKey("categorias.id_categoria"), nullable=True)
+    id_categoria: Mapped[int | None] = mapped_column(
+        ForeignKey("categorias.id_categoria", ondelete="SET NULL"),
+        nullable=True,
+    )
     id_usuario_creador: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     fecha_cierre: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
