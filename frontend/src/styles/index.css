@@ -20,6 +20,13 @@
   --shadow-soft: 0 8px 24px rgb(16 38 43 / 8%);
   --radius: 14px;
   --radius-sm: 10px;
+  --button-height: 42px;
+  --button-compact-height: 36px;
+  --button-icon-size: 40px;
+  --button-radius: var(--radius-sm);
+  --button-compact-radius: 8px;
+  --button-padding: 0 18px;
+  --button-compact-padding: 0 12px;
 }
 
 * {
@@ -80,6 +87,7 @@ select {
 
 button {
   cursor: pointer;
+  line-height: 1.1;
 }
 
 button:disabled {
@@ -135,8 +143,10 @@ main:focus {
 }
 
 .app-brand-button {
+  min-height: var(--button-compact-height);
+  border-radius: var(--button-compact-radius);
   border: 0;
-  padding: 0;
+  padding: 0 4px;
   background: transparent;
 }
 
@@ -529,24 +539,30 @@ main:focus {
 
 .saved-division-actions {
   display: inline-flex;
-  gap: 16px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
 .saved-division-actions button {
-  border: 0;
-  padding: 0;
-  background: transparent;
+  min-height: var(--button-compact-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--button-compact-radius);
+  padding: var(--button-compact-padding);
+  background: var(--surface);
   color: var(--primary);
   font-size: 12px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .saved-division-actions button:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
   color: var(--primary-dark);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .save-division-compact {
@@ -572,11 +588,11 @@ main:focus {
 
 .save-division-controls input,
 .save-division-controls button {
-  min-height: 38px;
+  min-height: var(--button-compact-height);
 }
 
 .save-division-controls button {
-  padding: 0 16px;
+  padding: var(--button-compact-padding);
 }
 
 .expense-division-layout {
@@ -621,10 +637,14 @@ main:focus {
 }
 
 .stepper button {
+  min-height: var(--button-compact-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 8px 10px;
+  border-radius: var(--button-compact-radius);
+  padding: var(--button-compact-padding);
   text-align: center;
   font-size: 12px;
   font-weight: 850;
@@ -756,16 +776,19 @@ main:focus {
 
 .primary-button,
 .create-trip-button,
-.secondary-button {
-  min-height: 42px;
+.secondary-button,
+.danger-button {
+  min-height: var(--button-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: var(--radius-sm);
-  padding: 0 18px;
+  border-radius: var(--button-radius);
+  padding: var(--button-padding);
   font-size: 14px;
   font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -799,7 +822,8 @@ main:focus {
 
 .primary-button:active,
 .create-trip-button:active,
-.secondary-button:active {
+.secondary-button:active,
+.danger-button:active {
   transform: translateY(1px);
 }
 
@@ -823,8 +847,9 @@ main:focus {
 }
 
 .icon-button {
-  width: 40px;
-  height: 40px;
+  width: var(--button-icon-size);
+  height: var(--button-icon-size);
+  min-width: var(--button-icon-size);
   border-radius: 999px;
   border: 1px solid transparent;
   background: transparent;
@@ -842,9 +867,10 @@ main:focus {
 }
 
 .icon-action-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: var(--button-icon-size);
+  height: var(--button-icon-size);
+  min-width: var(--button-icon-size);
+  border-radius: var(--button-radius);
   border: 1px solid var(--border-strong);
   background: var(--surface);
   color: var(--primary);
@@ -862,11 +888,6 @@ main:focus {
   background: var(--danger);
   color: #ffffff;
   box-shadow: 0 10px 18px rgb(180 35 24 / 18%);
-  min-height: 42px;
-  border-radius: var(--radius-sm);
-  padding: 0 18px;
-  font-size: 14px;
-  font-weight: 800;
 }
 
 .danger-button:hover {
@@ -875,8 +896,13 @@ main:focus {
 }
 
 .link-button {
+  min-height: var(--button-compact-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  padding: 0;
+  border-radius: var(--button-compact-radius);
+  padding: 0 4px;
   background: transparent;
   color: var(--primary);
   font-size: 13px;
@@ -901,8 +927,13 @@ main:focus {
 .back-link,
 .travel-back-link,
 .logout-button {
+  min-height: var(--button-compact-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  padding: 0;
+  border-radius: var(--button-compact-radius);
+  padding: 0 4px;
   background: transparent;
   color: var(--primary);
   text-decoration: none;
@@ -975,13 +1006,14 @@ main:focus {
 }
 
 .home-nav-link {
-  min-height: 38px;
+  min-height: var(--button-compact-height);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   border: 0;
-  border-radius: 9px;
-  padding: 0 13px;
+  border-radius: var(--button-compact-radius);
+  padding: var(--button-compact-padding);
   background: transparent;
   color: var(--text-muted);
   font-size: 13px;
@@ -1011,14 +1043,18 @@ main:focus {
 }
 
 .my-trips-button {
-  min-height: 38px;
+  min-height: var(--button-compact-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface);
   color: var(--text);
-  padding: 0 14px;
+  padding: var(--button-compact-padding);
   font-size: 13px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .home-content {
@@ -1124,7 +1160,7 @@ main:focus {
   align-items: center;
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 8px 12px;
+  padding: var(--button-compact-padding);
   background: var(--surface);
   box-shadow: var(--shadow-soft);
 }
@@ -1334,13 +1370,14 @@ main:focus {
 }
 
 .trip-filter-bar button {
+  min-height: var(--button-compact-height);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  min-height: 34px;
   border: 0;
-  border-radius: 7px;
-  padding: 0 12px;
+  border-radius: var(--button-compact-radius);
+  padding: var(--button-compact-padding);
   color: var(--text-muted);
   background: transparent;
   font-size: 13px;
@@ -1558,11 +1595,12 @@ main:focus {
   top: 50%;
   width: 32px;
   height: 32px;
+  min-width: 32px;
   display: inline-grid;
   place-items: center;
   transform: translateY(-50%);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--button-compact-radius);
   background: var(--surface-muted);
   color: var(--primary);
 }
@@ -1583,7 +1621,7 @@ main:focus {
 
 .profile-actions {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   align-items: center;
   margin-top: 2px;
@@ -1649,9 +1687,13 @@ main:focus {
 }
 
 .balance-modal-tab {
+  min-height: var(--button-compact-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 999px;
-  padding: 10px 12px;
+  border-radius: var(--button-compact-radius);
+  padding: var(--button-compact-padding);
   background: transparent;
   font-weight: 850;
   cursor: pointer;
