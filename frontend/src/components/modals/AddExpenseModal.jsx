@@ -681,35 +681,35 @@ export function AddExpenseModal({
               />
 
               <div className="field">
-                <div className="field-label-row">
-                  <label htmlFor="expense-category">Categoría</label>
+                <label htmlFor="expense-category">Categoría</label>
+                <div className="category-picker-row">
+                  <select
+                    id="expense-category"
+                    name="expense-category"
+                    value={categoriaId}
+                    onChange={(event) => setCategoriaId(event.target.value)}
+                    required
+                    aria-describedby={errors.categoriaId ? "expense-category-error" : undefined}
+                    aria-invalid={errors.categoriaId ? "true" : "false"}
+                  >
+                    <option value="">Seleccione una categoría</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id_categoria} value={cat.id_categoria}>
+                        {cat.nombre_categoria}
+                      </option>
+                    ))}
+                  </select>
                   <button
-                    className="secondary-button"
+                    className="primary-button"
                     type="button"
                     aria-haspopup="dialog"
                     aria-label="Agregar nueva categoría de gasto"
                     onClick={() => setIsManageCategoriesOpen(true)}
                     disabled={isSaving}
                   >
-                    Agregar categorías
+                    Agregar categoría
                   </button>
                 </div>
-                <select
-                  id="expense-category"
-                  name="expense-category"
-                  value={categoriaId}
-                  onChange={(event) => setCategoriaId(event.target.value)}
-                  required
-                  aria-describedby={errors.categoriaId ? "expense-category-error" : undefined}
-                  aria-invalid={errors.categoriaId ? "true" : "false"}
-                >
-                  <option value="">Seleccione una opción</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id_categoria} value={cat.id_categoria}>
-                      {cat.nombre_categoria}
-                    </option>
-                  ))}
-                </select>
                 {errors.categoriaId ? (
                   <p className="field-error" id="expense-category-error" role="alert">
                     {errors.categoriaId}

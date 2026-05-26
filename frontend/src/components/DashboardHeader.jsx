@@ -1,5 +1,6 @@
 import { HomeIcon } from "./icons/HomeIcon";
 import { UserIcon } from "./icons/UserIcon";
+import logo from "../assets/logo.png";
 import { views } from "../routes/views";
 
 export function DashboardHeader({ activeView, currentUser, goTo, onLogout }) {
@@ -12,8 +13,7 @@ export function DashboardHeader({ activeView, currentUser, goTo, onLogout }) {
           onClick={() => goTo(views.home)}
           aria-label="Ir a la pantalla principal de TravelSplit"
         >
-          <span aria-hidden="true">TS</span>
-          <strong>TravelSplit</strong>
+          <img className="app-brand-logo" src={logo} alt="Logo de TravelSplit" />
         </button>
         <nav aria-label="Navegación principal" className="home-nav">
           <button

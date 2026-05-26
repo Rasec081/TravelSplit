@@ -236,7 +236,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
                 required
                 value={categoryId}
               >
-                <option value="">Seleccione una opción</option>
+                <option value="">Seleccione una categoría</option>
                 {categories.map((category) => (
                   <option key={category.id_categoria} value={category.id_categoria}>
                     {category.nombre_categoria}
@@ -251,7 +251,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
                 onClick={() => setIsCategoriesOpen(true)}
                 disabled={isInitializing || isLoading}
               >
-                Agregar
+                Agregar categoría
               </button>
             </div>
             {errors.categoryId ? (

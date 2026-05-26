@@ -40,11 +40,16 @@ def get_user_travel_by_ids(db: Session, travel_id: int, user_id: int) -> UserTra
 
 
 def is_travel_admin(db: Session, travel_id: int, user_id: int) -> bool:
-    """Verifica si un usuario es admin (creador) del viaje."""
+    """Verifica si un usuario es admin del viaje."""
     travel = get_travel_by_id(db, travel_id)
     if not travel:
         return False
-    return travel.id_usuario_creador == user_id
+
+    if travel.id_usuario_creador == user_id:
+        return True
+
+    user_travel = get_user_travel_by_ids(db, travel_id, user_id)
+    return user_travel is not None and user_travel.rol == "admin"
 
 
 def create_travel(db: Session, travel_data: TravelCreate) -> Travel:

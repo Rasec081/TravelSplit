@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Modal } from "./Modal";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { TextInput } from "../forms/TextInput";
 import { addUserToTravel, deleteUserTravel, updateUserTravel } from "../../services/userTravelService";
 
 function PencilIcon() {
@@ -27,6 +26,10 @@ function TrashIcon() {
   );
 }
 
+function normalizeRole(role) {
+  return role === "admin" ? "admin" : "participante";
+}
+
 export function ManageParticipantsModal({
   isOpen,
   onClose,
@@ -40,6 +43,7 @@ export function ManageParticipantsModal({
 }) {
   const [errors, setErrors] = useState({});
   const [statusMessage, setStatusMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const [addEmail, setAddEmail] = useState("");
@@ -83,6 +87,7 @@ export function ManageParticipantsModal({
     if (!isOpen) return;
     setErrors({});
     setStatusMessage("");
+    setSuccessMessage("");
     setAddEmail("");
     setEditingUserTravelId(null);
     setEditingRole("participante");
@@ -135,8 +140,9 @@ export function ManageParticipantsModal({
 
   function startEdit(participant) {
     setEditingUserTravelId(participant.id_user_travel);
-    setEditingRole(participant.rol ?? "participante");
+    setEditingRole(normalizeRole(participant.rol));
     setErrors({});
+    setSuccessMessage("");
   }
 
   function cancelEdit() {
@@ -147,17 +153,21 @@ export function ManageParticipantsModal({
   async function saveEdit(participant) {
     if (!editingUserTravelId) return;
 
-    if (participant.id_usuario === adminUserId && editingRole !== "admin") {
-      setErrors({ edit: "No se puede cambiar el rol del administrador principal." });
+    const currentRole = normalizeRole(participant.rol);
+    const nextRole = normalizeRole(editingRole);
+
+    if (nextRole === currentRole) {
       return;
     }
 
     try {
       setIsLoading(true);
       setStatusMessage("Guardando cambios...");
-      await updateUserTravel(editingUserTravelId, { rol: editingRole });
+      await updateUserTravel(editingUserTravelId, { rol: nextRole });
       setEditingUserTravelId(null);
-      setStatusMessage("Participante actualizado.");
+      setEditingRole("participante");
+      setStatusMessage("Rol actualizado correctamente.");
+      setSuccessMessage("Rol actualizado correctamente.");
       await onChanged?.();
     } catch (error) {
       setErrors({ edit: error.message });
@@ -226,6 +236,11 @@ export function ManageParticipantsModal({
               {errors.delete}
             </p>
           ) : null}
+          {successMessage ? (
+            <p className="form-success" role="status">
+              {successMessage}
+            </p>
+          ) : null}
 
           {sortedParticipants.length === 0 ? (
             <p className="hint-text">No hay participantes.</p>
@@ -233,6 +248,9 @@ export function ManageParticipantsModal({
             <ul className="category-list" aria-label="Lista de participantes">
               {sortedParticipants.map((p) => {
                 const isEditing = editingUserTravelId === p.id_user_travel;
+                const isPrimaryAdmin = p.id_usuario === adminUserId;
+                const currentRole = normalizeRole(p.rol);
+                const hasRoleChanged = normalizeRole(editingRole) !== currentRole;
                 const balance = balancesByUserId?.get(p.id_usuario)?.balance_final ?? 0;
                 return (
                   <li key={p.id_user_travel} className="category-card">
@@ -241,7 +259,7 @@ export function ManageParticipantsModal({
                         <span className="category-name">{p.nombre}</span>
                         {p.correo ? <div className="muted">{p.correo}</div> : null}
                         <div className="muted">
-                          Rol: <strong>{p.id_usuario === adminUserId ? "admin" : p.rol}</strong> · Balance:{" "}
+                          Rol: <strong>{currentRole}</strong> · Balance:{" "}
                           <strong>{String(balance)}</strong>
                         </div>
                       </div>
@@ -260,7 +278,12 @@ export function ManageParticipantsModal({
                               <option value="admin">admin</option>
                               <option value="participante">participante</option>
                             </select>
-                            <button className="primary-button" type="button" onClick={() => saveEdit(p)} disabled={isLoading}>
+                            <button
+                              className="primary-button"
+                              type="button"
+                              onClick={() => saveEdit(p)}
+                              disabled={isLoading || !hasRoleChanged}
+                            >
                               Guardar
                             </button>
                             <button className="secondary-button" type="button" onClick={cancelEdit} disabled={isLoading}>
@@ -273,9 +296,13 @@ export function ManageParticipantsModal({
                               className="icon-action-button"
                               type="button"
                               onClick={() => startEdit(p)}
-                              disabled={isLoading}
-                              aria-label={`Editar participante ${p.nombre}`}
-                              title="Editar"
+                              disabled={isLoading || isPrimaryAdmin}
+                              aria-label={
+                                isPrimaryAdmin
+                                  ? `No se puede editar el rol del admin principal ${p.nombre}`
+                                  : `Editar participante ${p.nombre}`
+                              }
+                              title={isPrimaryAdmin ? "El admin principal no se puede editar" : "Editar"}
                             >
                               <PencilIcon />
                               <span className="sr-only">Editar</span>
@@ -303,21 +330,30 @@ export function ManageParticipantsModal({
         </section>
 
         <form className="modal-form" onSubmit={handleAdd} aria-label="Agregar participante">
-          <TextInput
-            autoFocus
-            error={errors.addEmail}
-            id="participant-add-email"
-            label="Agregar usuario por correo"
-            onChange={(event) => setAddEmail(event.target.value)}
-            placeholder="usuario@correo.com"
-            required
-            type="email"
-            value={addEmail}
-          />
-          <div className="modal-actions-inline">
-            <button className="primary-button" type="submit" disabled={isLoading}>
-              Agregar
-            </button>
+          <div className="field">
+            <label htmlFor="participant-add-email">Agregar usuario por correo</label>
+            <div className="category-picker-row">
+              <input
+                aria-describedby={errors.addEmail ? "participant-add-email-error" : undefined}
+                aria-invalid={errors.addEmail ? "true" : "false"}
+                autoFocus
+                id="participant-add-email"
+                name="participant-add-email"
+                onChange={(event) => setAddEmail(event.target.value)}
+                placeholder="usuario@correo.com"
+                required
+                type="email"
+                value={addEmail}
+              />
+              <button className="primary-button" type="submit" disabled={isLoading}>
+                Agregar
+              </button>
+            </div>
+            {errors.addEmail ? (
+              <p className="field-error" id="participant-add-email-error" role="alert">
+                {errors.addEmail}
+              </p>
+            ) : null}
           </div>
         </form>
       </Modal>
