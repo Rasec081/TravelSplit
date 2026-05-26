@@ -30,3 +30,8 @@ def init_db() -> None:
                 )
             )
 
+    user_column_names = {column["name"] for column in inspector.get_columns("usuarios")}
+    if "foto_perfil" not in user_column_names:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT"))
+

@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from os import getenv
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.database.init_db import init_db
@@ -44,14 +45,22 @@ app = FastAPI(
     ],
 )
 
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
+
+configured_origins = [
+    origin.strip()
+    for origin in getenv("FRONTEND_URLS", getenv("FRONTEND_URL", "")).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=DEFAULT_ALLOWED_ORIGINS + configured_origins,
     allow_origin_regex=r"https://.*\.devtunnels\.ms",
     allow_credentials=True,
     allow_methods=["*"],

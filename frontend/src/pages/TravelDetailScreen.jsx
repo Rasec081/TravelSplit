@@ -77,6 +77,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   const balanceTabRefs = useRef([]);
 
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
+  const [isEditTripDiscardOpen, setIsEditTripDiscardOpen] = useState(false);
   const [tripNameDraft, setTripNameDraft] = useState("");
   const [tripCategoryDraft, setTripCategoryDraft] = useState("");
   const [tripNameError, setTripNameError] = useState("");
@@ -108,6 +109,9 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
   }, [userTravels, currentUser]);
   const isClosed = useMemo(() => isTravelClosed(travel), [travel]);
   const canManageTravel = (isOwner || hasAdminRole) && !isClosed;
+  const hasEditTripChanges =
+    tripNameDraft.trim() !== (travel?.nombre ?? "") ||
+    String(tripCategoryDraft) !== (travel?.id_categoria ? String(travel.id_categoria) : "");
 
   const userById = useMemo(() => {
     return new Map((users ?? []).map((user) => [user.id_usuario, user]));
@@ -149,6 +153,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
         id_usuario: ut.id_usuario,
         nombre: user?.nombre ?? `Usuario ${ut.id_usuario}`,
         correo: user?.correo ?? "",
+        foto_perfil: user?.foto_perfil ?? "",
         rol: ut.rol,
         balance_final: b?.balance_final ?? 0,
       };
@@ -277,6 +282,14 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
     } catch (error) {
       setTripNameError(error.message);
     }
+  }
+
+  function requestCloseEditTrip() {
+    if (hasEditTripChanges) {
+      setIsEditTripDiscardOpen(true);
+      return;
+    }
+    setIsEditTripOpen(false);
   }
 
   function canFinalize() {
@@ -563,9 +576,13 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                 return (
                 <article className="participant-row-item no-actions" key={row.id_usuario}>
                   <div className="participant-identity">
-                    <div className="participant-avatar" aria-hidden="true">
-                      {avatarLetter(row.nombre)}
-                    </div>
+                    {row.foto_perfil ? (
+                      <img className="participant-avatar" src={row.foto_perfil} alt="" aria-hidden="true" />
+                    ) : (
+                      <div className="participant-avatar" aria-hidden="true">
+                        {avatarLetter(row.nombre)}
+                      </div>
+                    )}
                     <div>
                       <strong>{row.nombre}</strong>
                       {row.correo ? <div className="muted">{row.correo}</div> : null}
@@ -641,6 +658,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           id_usuario: p.id_usuario,
           nombre: p.nombre,
           correo: p.correo,
+          foto_perfil: p.foto_perfil,
           rol: p.rol,
         }))}
         balancesByUserId={balanceByUserId}
@@ -957,11 +975,11 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
       <Modal
         description="Actualiza el nombre y la categoría del viaje."
         isOpen={isEditTripOpen}
-        onClose={() => setIsEditTripOpen(false)}
+        onClose={requestCloseEditTrip}
         title="Editar viaje"
         footer={
           <>
-            <button className="secondary-button" type="button" onClick={() => setIsEditTripOpen(false)}>
+            <button className="secondary-button" type="button" onClick={requestCloseEditTrip}>
               Cancelar
             </button>
             <button className="primary-button" type="submit" form="edit-trip-form">
@@ -1016,6 +1034,21 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={isEditTripDiscardOpen}
+        title="Descartar cambios"
+        description="Hay cambios sin guardar en este viaje. Si cancelas, se perderán."
+        confirmLabel="Descartar"
+        cancelLabel="Seguir editando"
+        onCancel={() => setIsEditTripDiscardOpen(false)}
+        onConfirm={() => {
+          setIsEditTripDiscardOpen(false);
+          setIsEditTripOpen(false);
+          setTripNameDraft(travel?.nombre ?? "");
+          setTripCategoryDraft(travel?.id_categoria ? String(travel.id_categoria) : "");
+        }}
+      />
 
       <Modal
         description="Para finalizar, todos los balances deben estar saldados (en cero)."

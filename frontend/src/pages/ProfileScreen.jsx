@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { DashboardHeader } from "../components/DashboardHeader";
+import { ConfirmDialog } from "../components/modals/ConfirmDialog";
 import { PasswordInput } from "../components/forms/PasswordInput";
 import { TextInput } from "../components/forms/TextInput";
 import { updateUser } from "../services/authService";
@@ -19,24 +20,69 @@ function splitFullName(fullName = "") {
   };
 }
 
+const MAX_PROFILE_IMAGE_SIZE = 2 * 1024 * 1024;
+
+function avatarLetter(name) {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return "?";
+  return trimmed.slice(0, 1).toLocaleUpperCase("es-CR");
+}
+
+function readProfileImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+
+        canvas.width = size;
+        canvas.height = size;
+
+        const scale = Math.max(size / image.width, size / image.height);
+        const width = image.width * scale;
+        const height = image.height * scale;
+        const x = (size - width) / 2;
+        const y = (size - height) / 2;
+
+        context.drawImage(image, x, y, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      image.onerror = () => reject(new Error("No se pudo leer la imagen seleccionada."));
+      image.src = reader.result;
+    };
+
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen seleccionada."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
   const userId = currentUser?.id_usuario;
   const userName = splitFullName(currentUser?.nombre);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: userName.name,
     lastname: userName.lastname,
     email: currentUser?.correo ?? "",
     password: "",
+    profileImage: currentUser?.foto_perfil ?? "",
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
   const fullName = `${formData.name} ${formData.lastname}`.trim();
   const normalizedEmail = formData.email.trim().toLowerCase();
+  const currentProfileImage = currentUser?.foto_perfil ?? "";
   const hasUserChanges =
     fullName !== (currentUser?.nombre ?? "") ||
     normalizedEmail !== (currentUser?.correo ?? "").toLowerCase() ||
-    Boolean(formData.password);
+    Boolean(formData.password) ||
+    formData.profileImage !== currentProfileImage;
 
   function updateField(field, value) {
     setFormData((currentData) => ({
@@ -44,6 +90,53 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
       [field]: value,
     }));
     setSuccessMessage("");
+  }
+
+  async function handleProfileImageChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setErrors((currentErrors) => ({ ...currentErrors, profileImage: undefined }));
+    setSuccessMessage("");
+
+    if (!file.type.startsWith("image/")) {
+      setErrors((currentErrors) => ({
+        ...currentErrors,
+        profileImage: "Selecciona un archivo de imagen.",
+      }));
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_IMAGE_SIZE) {
+      setErrors((currentErrors) => ({
+        ...currentErrors,
+        profileImage: "La imagen no puede superar 2 MB.",
+      }));
+      return;
+    }
+
+    try {
+      const profileImage = await readProfileImage(file);
+      updateField("profileImage", profileImage);
+    } catch (error) {
+      setErrors((currentErrors) => ({ ...currentErrors, profileImage: error.message }));
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  function removeProfileImage() {
+    updateField("profileImage", "");
+    setErrors((currentErrors) => ({ ...currentErrors, profileImage: undefined }));
+  }
+
+  function requestCancel() {
+    if (hasUserChanges) {
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+
+    goTo(views.home);
   }
 
   async function handleSubmit(event) {
@@ -90,18 +183,25 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
       backendUpdates.contrasena = formData.password;
     }
 
+    if (formData.profileImage !== currentProfileImage) {
+      backendUpdates.foto_perfil = formData.profileImage || null;
+    }
+
     try {
       setIsSubmitting(true);
+      let updatedUser = currentUser;
 
       if (Object.keys(backendUpdates).length > 0) {
         const response = await updateUser(userId, backendUpdates);
-        onUserUpdate(response.data);
+        updatedUser = response.data;
+        onUserUpdate(updatedUser);
       }
 
       setFormData((currentData) => ({
         ...currentData,
         email: normalizedEmail,
         password: "",
+        profileImage: updatedUser?.foto_perfil ?? "",
       }));
       setSuccessMessage("Perfil actualizado correctamente.");
     } catch (error) {
@@ -134,6 +234,52 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
             <p className="form-section-title">Información personal</p>
             <span>Estos datos ayudan a identificarte dentro de tus viajes compartidos.</span>
           </div>
+
+          <section className="profile-photo-section" aria-label="Foto de perfil">
+            <div className="profile-photo-preview">
+              {formData.profileImage ? (
+                <img src={formData.profileImage} alt="Foto de perfil actual" />
+              ) : (
+                <span aria-hidden="true">{avatarLetter(fullName)}</span>
+              )}
+            </div>
+            <div className="profile-photo-controls">
+              <div>
+                <p className="profile-photo-title">Foto de perfil</p>
+              </div>
+              <div className="profile-photo-actions">
+                <input
+                  ref={fileInputRef}
+                  className="sr-only"
+                  id="profile-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfileImageChange}
+                  tabIndex={-1}
+                />
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Agregar foto
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={removeProfileImage}
+                  disabled={!formData.profileImage}
+                >
+                  Borrar
+                </button>
+              </div>
+              {errors.profileImage ? (
+                <p className="field-error" role="alert">
+                  {errors.profileImage}
+                </p>
+              ) : null}
+            </div>
+          </section>
 
           <div className="two-columns">
             <TextInput
@@ -184,7 +330,7 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
           ) : null}
 
           <div className="profile-actions">
-            <button className="secondary-button" type="button" onClick={() => goTo(views.home)}>
+            <button className="secondary-button" type="button" onClick={requestCancel}>
               Cancelar
             </button>
             <button className="primary-button" disabled={isSubmitting || !hasUserChanges} type="submit">
@@ -193,6 +339,19 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
           </div>
         </form>
       </section>
+
+      <ConfirmDialog
+        isOpen={isDiscardConfirmOpen}
+        title="Descartar cambios"
+        description="Hay cambios sin guardar. Si cancelas, se perderán."
+        confirmLabel="Descartar"
+        cancelLabel="Seguir editando"
+        onCancel={() => setIsDiscardConfirmOpen(false)}
+        onConfirm={() => {
+          setIsDiscardConfirmOpen(false);
+          goTo(views.home);
+        }}
+      />
     </main>
   );
 }

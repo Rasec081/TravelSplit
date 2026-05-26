@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { Modal } from "./Modal";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { TextInput } from "../forms/TextInput";
 import { createGasto } from "../../services/gastoService";
 import { createDivisionGasto } from "../../services/divisionGastoService";
@@ -90,6 +91,13 @@ function writeStoredDivisionPresets(scopeKey, presets) {
   window.localStorage.setItem(DIVISION_PRESETS_STORAGE_KEY, JSON.stringify(stored));
 }
 
+function sameNumberSet(a, b) {
+  if (a.length !== b.length) return false;
+  const normalizedA = a.map(Number).sort((left, right) => left - right).join("|");
+  const normalizedB = b.map(Number).sort((left, right) => left - right).join("|");
+  return normalizedA === normalizedB;
+}
+
 function DivisionTypeIcon({ type }) {
   if (type === "shares") {
     return (
@@ -155,6 +163,7 @@ export function AddExpenseModal({
   const [editingPresetId, setEditingPresetId] = useState("");
   const [divisionPresetError, setDivisionPresetError] = useState("");
   const [isSavedDivisionsOpen, setIsSavedDivisionsOpen] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   const participantById = useMemo(() => {
     return new Map((participants ?? []).map((p) => [p.id_usuario, p]));
@@ -171,6 +180,19 @@ export function AddExpenseModal({
   }`;
   const presetScopeKey = getPresetScopeKey(travelId, currentUser?.id_usuario);
   const canUseDivisionPresets = divisionType === "shares" || divisionType === "custom";
+  const defaultPayerId = currentUser?.id_usuario ?? "";
+  const hasUnsavedChanges =
+    Boolean(descripcion.trim()) ||
+    Boolean(monto.trim()) ||
+    Boolean(categoriaId) ||
+    Number(pagadorId) !== Number(defaultPayerId) ||
+    !sameNumberSet(selectedParticipantIds, travelParticipantIds) ||
+    divisionType !== "equal" ||
+    sharesMode !== "parts" ||
+    (divisionType === "shares" && Object.values(shares).some(Boolean)) ||
+    (divisionType === "custom" && Object.values(customAmounts).some(Boolean)) ||
+    Boolean(divisionPresetName.trim()) ||
+    Boolean(editingPresetId);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -191,11 +213,26 @@ export function AddExpenseModal({
     setEditingPresetId("");
     setDivisionPresetError("");
     setIsSavedDivisionsOpen(false);
+    setIsDiscardConfirmOpen(false);
 
     const defaultPayer = currentUser?.id_usuario ?? "";
     setPagadorId(defaultPayer);
     setSelectedParticipantIds(travelParticipantIds);
   }, [isOpen, currentUser, travelParticipantIds]);
+
+  function handleClose() {
+    if (isSaving) return;
+    if (hasUnsavedChanges) {
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+    onClose();
+  }
+
+  function discardAndClose() {
+    setIsDiscardConfirmOpen(false);
+    onClose();
+  }
 
   useEffect(() => {
     if (!isOpen) return;
@@ -592,13 +629,13 @@ export function AddExpenseModal({
     <>
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleClose}
         title="Agregar gasto"
         description="Registra un gasto del viaje y define cómo se divide entre participantes."
         isDismissable={!isSaving}
         footer={
           <>
-            <button className="secondary-button" type="button" onClick={onClose} disabled={isSaving}>
+            <button className="secondary-button" type="button" onClick={handleClose} disabled={isSaving}>
               Cancelar
             </button>
             {step > 1 ? (
@@ -1035,6 +1072,16 @@ export function AddExpenseModal({
           const updated = await listExpenseCategories(currentUser?.id_usuario);
           onCategoriesChanged?.(updated ?? []);
         }}
+      />
+
+      <ConfirmDialog
+        isOpen={isDiscardConfirmOpen}
+        title="Descartar cambios"
+        description="Hay cambios sin guardar en este gasto. Si cancelas, se perderán."
+        confirmLabel="Descartar"
+        cancelLabel="Seguir editando"
+        onCancel={() => setIsDiscardConfirmOpen(false)}
+        onConfirm={discardAndClose}
       />
     </>
   );

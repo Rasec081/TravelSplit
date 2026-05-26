@@ -5,6 +5,7 @@ import { listTravelCategories } from "../../services/categoriesService";
 import { createTravel } from "../../services/travelService";
 import { listUsers } from "../../services/userService";
 import { addUserToTravel } from "../../services/userTravelService";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { ManageTravelCategoriesModal } from "./ManageTravelCategoriesModal";
 import { Modal } from "./Modal";
 
@@ -23,6 +24,7 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   useEffect(() => {
     isLoadingRef.current = isLoading;
@@ -79,10 +81,26 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
     setParticipants([]);
     setErrors({});
     setStatusMessage("");
+    setIsDiscardConfirmOpen(false);
   }
+
+  const hasUnsavedChanges =
+    Boolean(tripName.trim()) ||
+    Boolean(categoryId) ||
+    Boolean(participantEmail.trim()) ||
+    participants.length > 0;
 
   function handleClose() {
     if (isLoadingRef.current) return;
+    if (hasUnsavedChanges) {
+      setIsDiscardConfirmOpen(true);
+      return;
+    }
+    resetForm();
+    onClose();
+  }
+
+  function discardAndClose() {
     resetForm();
     onClose();
   }
@@ -343,6 +361,16 @@ export function CreateTripModal({ currentUser, isOpen, onClose, onCreated }) {
             setErrors((current) => ({ ...current, form: error.message }));
           }
         }}
+      />
+
+      <ConfirmDialog
+        isOpen={isDiscardConfirmOpen}
+        title="Descartar cambios"
+        description="Hay cambios sin guardar en este viaje. Si sales, se perderán."
+        confirmLabel="Descartar"
+        cancelLabel="Seguir editando"
+        onCancel={() => setIsDiscardConfirmOpen(false)}
+        onConfirm={discardAndClose}
       />
     </>
   );

@@ -152,6 +152,9 @@ def update_user(db: Session, user: User, user_data: UserUpdate) -> User:
     if "contrasena" in updates and updates["contrasena"] is not None:
         user.contrasena = hash_password(updates["contrasena"])
 
+    if "foto_perfil" in updates:
+        user.foto_perfil = updates["foto_perfil"] or None
+
     try:
         db.commit()
         db.refresh(user)

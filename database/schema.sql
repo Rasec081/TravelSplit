@@ -10,7 +10,8 @@ CREATE TABLE usuarios (
     id_usuario SERIAL PRIMARY KEY,
     nombre VARCHAR(64) NOT NULL,
     correo VARCHAR(64) UNIQUE NOT NULL,
-    contrasena VARCHAR(256) NOT NULL
+    contrasena VARCHAR(256) NOT NULL,
+    foto_perfil TEXT
 );
 
 -- =========================================

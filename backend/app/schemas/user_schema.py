@@ -74,6 +74,7 @@ class UserUpdate(BaseModel):
     nombre: str | None = Field(default=None, min_length=2, max_length=64)
     correo: EmailStr | None = Field(default=None, max_length=64)
     contrasena: str | None = Field(default=None, min_length=8, max_length=128)
+    foto_perfil: str | None = Field(default=None, max_length=300000)
 
     @field_validator("nombre")
     @classmethod
@@ -86,6 +87,17 @@ class UserUpdate(BaseModel):
             raise ValueError("El nombre debe tener al menos 2 caracteres útiles.")
         return normalized_value
 
+    @field_validator("foto_perfil")
+    @classmethod
+    def validate_foto_perfil(cls, value: str | None) -> str | None:
+        if value in (None, ""):
+            return None
+
+        if not value.startswith("data:image/"):
+            raise ValueError("La foto de perfil debe ser una imagen valida.")
+
+        return value
+
     @model_validator(mode="after")
     def validate_has_updates(self) -> Self:
         if not self.model_fields_set:
@@ -95,6 +107,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id_usuario: int
+    foto_perfil: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
