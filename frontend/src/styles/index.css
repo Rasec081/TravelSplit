@@ -1949,6 +1949,20 @@ main:focus {
   gap: 12px;
 }
 
+.category-create-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 10px;
+}
+
+.category-create-form .field {
+  min-width: 0;
+}
+
+.category-create-form .modal-actions-inline {
+  display: contents;
+}
+
 @media (max-width: 760px) {
   .auth-page {
     padding: 22px 16px 40px;
@@ -2120,6 +2134,15 @@ main:focus {
   .profile-photo-actions,
   .profile-photo-actions .primary-button,
   .profile-photo-actions .secondary-button {
+    width: 100%;
+  }
+
+  .category-create-form {
+    grid-template-columns: 1fr;
+  }
+
+  .category-create-form .modal-actions-inline,
+  .category-create-form .primary-button {
     width: 100%;
   }
 

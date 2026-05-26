@@ -1023,7 +1023,7 @@ export function TravelDetailScreen({ currentUser, goTo, onLogout, travelId }) {
                 type="button"
                 onClick={() => setIsTravelCategoriesOpen(true)}
               >
-                Agregar
+                Agregar categoría
               </button>
             </div>
             {tripCategoryError ? (

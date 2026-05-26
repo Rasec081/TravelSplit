@@ -280,7 +280,7 @@ export function ManageExpenseCategoriesModal({ currentUser, isOpen, onClose, onC
           )}
         </section>
 
-        <form className="modal-form" onSubmit={handleCreate} aria-label="Agregar categoría">
+        <form className="modal-form category-create-form" onSubmit={handleCreate} aria-label="Agregar categoría">
           <TextInput
             autoFocus={editingId === null}
             error={errors.newCategoryName}
