@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
 export async function request(path, options) {
   let response;
@@ -12,7 +12,7 @@ export async function request(path, options) {
     });
   } catch (error) {
     throw new Error(
-      `No se pudo conectar con el backend. Verifica que la API esté encendida en ${API_URL}.`,
+      `No se pudo conectar con el backend en ${API_URL}. Abre ${API_URL}/health y revisa que responda. Si responde, revisa CORS y que FRONTEND_URLS incluya este dominio de Vercel.`,
     );
   }
 
@@ -24,4 +24,3 @@ export async function request(path, options) {
 
   return data;
 }
-
