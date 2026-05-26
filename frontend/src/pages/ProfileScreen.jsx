@@ -31,20 +31,29 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fullName = `${formData.name} ${formData.lastname}`.trim();
+  const normalizedEmail = formData.email.trim().toLowerCase();
+  const hasUserChanges =
+    fullName !== (currentUser?.nombre ?? "") ||
+    normalizedEmail !== (currentUser?.correo ?? "").toLowerCase() ||
+    Boolean(formData.password);
 
   function updateField(field, value) {
     setFormData((currentData) => ({
       ...currentData,
       [field]: value,
     }));
+    setSuccessMessage("");
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
 
     const nextErrors = {};
-    const fullName = `${formData.name} ${formData.lastname}`.trim();
-    const normalizedEmail = formData.email.trim().toLowerCase();
+
+    if (!hasUserChanges) {
+      return;
+    }
 
     if (fullName.length < 2) {
       nextErrors.name = "Ingresa tu nombre.";
@@ -178,7 +187,7 @@ export function ProfileScreen({ currentUser, goTo, onLogout, onUserUpdate }) {
             <button className="secondary-button" type="button" onClick={() => goTo(views.home)}>
               Cancelar
             </button>
-            <button className="primary-button" disabled={isSubmitting} type="submit">
+            <button className="primary-button" disabled={isSubmitting || !hasUserChanges} type="submit">
               {isSubmitting ? "Guardando..." : "Guardar cambios"}
             </button>
           </div>
