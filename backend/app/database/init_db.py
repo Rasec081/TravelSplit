@@ -13,6 +13,21 @@ from app.database.models.travel_model import Travel, UserTravel  # noqa: F401
 from app.database.models.user_model import User  # noqa: F401
 
 
+DEFAULT_CATEGORIES = [
+    ("Vacaciones", "viaje"),
+    ("Trabajo", "viaje"),
+    ("Familia", "viaje"),
+    ("Amigos", "viaje"),
+    ("Académico", "viaje"),
+    ("Transporte", "gasto"),
+    ("Hospedaje", "gasto"),
+    ("Alimentación", "gasto"),
+    ("Compras", "gasto"),
+    ("Entretenimiento", "gasto"),
+    ("Emergencias", "gasto"),
+]
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
 
@@ -34,4 +49,23 @@ def init_db() -> None:
     if "foto_perfil" not in user_column_names:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT"))
+
+    with engine.begin() as connection:
+        for name, category_type in DEFAULT_CATEGORIES:
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO categorias (nombre_categoria, tipo, id_usuario)
+                    SELECT :name, :category_type, NULL
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM categorias
+                        WHERE nombre_categoria = :name
+                          AND tipo = :category_type
+                          AND id_usuario IS NULL
+                    )
+                    """
+                ),
+                {"name": name, "category_type": category_type},
+            )
 
